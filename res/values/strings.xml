@@ -8,10 +8,13 @@
   <string name="volume">Volume</string>
   <string name="ssml">SSML Tags</string>
   <string name="help">"?"</string>
+  <string name="speak">Speak</string>
   
-  <string name="btn_speak">Speak</string>
-  <string name="btn_clear">Clear</string>
-  <string name="btn_write">Save</string>
+  <string name="spoken_clear">Clear</string>
+  <string name="spoken_write">Save</string>
+  <string name="spoken_prefs">Properties</string>
+  
+  <string name="unknown_data_type">Failed to load text: Unsupported data type!</string>
   
   <string name="failed_init">Failed to initialize speech synthesizer</string>
   <string name="album_name">Saved Speech</string>
