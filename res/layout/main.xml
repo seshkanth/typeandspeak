@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+  xmlns:android="http://schemas.android.com/apk/res/android"
+  xmlns:app="http://schemas.android.com/apk/res/com.googamaphone.typeandspeak"
+  android:layout_width="fill_parent"
+  android:layout_height="fill_parent"
+  android:orientation="vertical">
+  <LinearLayout
+    android:id="@+id/langPanel"
+    android:background="@drawable/bottom_bar"
+    android:orientation="vertical"
+    android:layout_width="fill_parent"
+    android:layout_height="wrap_content"
+    android:paddingTop="5dp"
+    android:paddingLeft="5dp"
+    android:paddingRight="5dp"
+    android:visibility="gone">
+    <Spinner
+      android:id="@+id/lstLangs"
+      android:background="@drawable/btn_dropdown_dark"
+      android:layout_width="fill_parent"
+      android:layout_height="wrap_content" />
+  </LinearLayout>
+  <FrameLayout
+    android:layout_width="fill_parent"
+    android:layout_height="0dp"
+    android:layout_weight="1.0">
+    <EditText
+      android:id="@+id/txtInput"
+      android:inputType="textAutoCorrect|textCapSentences|textMultiLine"
+      android:layout_width="fill_parent"
+      android:layout_height="fill_parent"
+      android:layout_marginTop="5px"
+      android:gravity="top" />
+  </FrameLayout>
+  <LinearLayout
+    android:id="@+id/btnPanel"
+    android:background="@drawable/bottom_bar"
+    android:orientation="horizontal"
+    android:layout_width="fill_parent"
+    android:layout_height="wrap_content"
+    android:paddingTop="5dp">
+    <ImageButton
+      android:id="@+id/btnClear"
+      android:layout_width="48dp"
+      android:layout_height="48dp"
+      android:text="@string/btn_clear"
+      android:src="@android:drawable/ic_menu_delete"
+      android:scaleType="fitCenter"
+      style="@style/dark_button" />
+    <Button
+      android:id="@+id/btnSpeak"
+      android:layout_width="0dp"
+      android:layout_height="fill_parent"
+      android:layout_weight="1.0"
+      android:text="@string/btn_speak"
+      android:textSize="20sp"
+      style="@style/blue_button" />
+    <ImageButton
+      android:id="@+id/btnProperties"
+      android:layout_width="48dp"
+      android:layout_height="48dp"
+      android:text="@string/btn_write"
+      android:src="@android:drawable/ic_menu_preferences"
+      android:scaleType="fitCenter"
+      style="@style/dark_button" />
+    <ImageButton
+      android:id="@+id/btnWrite"
+      android:layout_width="48dp"
+      android:layout_height="48dp"
+      android:text="@string/btn_write"
+      android:src="@android:drawable/ic_menu_save"
+      android:scaleType="fitCenter"
+      style="@style/dark_button" />
+  </LinearLayout>
+</LinearLayout>

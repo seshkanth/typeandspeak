@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+  xmlns:android="http://schemas.android.com/apk/res/android"
+  android:padding="10dp"
+  android:orientation="vertical"
+  android:layout_width="fill_parent"
+  android:layout_height="fill_parent">
+  <TextView
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:text="@string/pitch" />
+  <SeekBar
+    android:id="@+id/seekPitch"
+    android:layout_width="fill_parent"
+    android:layout_height="wrap_content"
+    android:max="100"
+    android:progress="50"
+    android:layout_marginBottom="5dp" />
+  <TextView
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:text="@string/speed" />
+  <SeekBar
+    android:id="@+id/seekSpeed"
+    android:layout_width="fill_parent"
+    android:layout_height="wrap_content"
+    android:max="100"
+    android:progress="50"
+    android:layout_marginBottom="5dp" />
+  <TextView
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:text="@string/ssml" />
+  <LinearLayout
+    android:id="@+id/toolPanel"
+    android:orientation="horizontal"
+    android:layout_width="fill_parent"
+    android:layout_height="wrap_content">
+    <Button
+      android:id="@+id/btnPitch"
+      android:text="&lt;Pitch&gt;"
+      android:textSize="12sp"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content" />
+    <Button
+      android:id="@+id/btnSpeed"
+      android:text="&lt;Speed&gt;"
+      android:textSize="12sp"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content" />
+    <Button
+      android:id="@+id/btnVolume"
+      android:text="&lt;Volume&gt;"
+      android:textSize="12sp"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content" />
+    <Button
+      android:id="@+id/btnHelp"
+      android:text="@string/help"
+      android:textSize="12sp"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_gravity="center_vertical|right"
+      android:layout_marginLeft="5dp"
+      android:background="@drawable/btn_circle" />
+  </LinearLayout>
+</LinearLayout>
