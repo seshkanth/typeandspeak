@@ -44,8 +44,14 @@
   
   <string name="saved_title">Saved as WAV</string>
   <string name="saved_message">Speech has been saved to SD card as %s. It has also been added to the device media library.</string>
+  <string name="open_library">Open library</string>
+  <string name="ok_continue">Continue</string>
   
   <string name="properties_title">Speech Properties</string>
   
   <string name="speed_tag">&lt;speed level=&quot;100&quot;&gt;%s&lt;/speed&gt;</string>
+  
+  <string name="lasers">Lasers!</string>
+  <string name="lasers_title">Lasers!</string>
+  <string name="pew_pew">Pew pew!</string>
 </resources>
