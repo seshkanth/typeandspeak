@@ -287,11 +287,13 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
             case DIALOG_PLAYBACK:
                 final PlaybackDialog playback = (PlaybackDialog) dialog;
 
-                try {
-                    playback.setFile(mContentValues);
-                    playback.setUri(mContentUri);
-                } catch (IOException e) {
-                    e.printStackTrace();
+                if (mContentValues != null && mContentUri != null) {
+                    try {
+                        playback.setFile(mContentValues);
+                        playback.setUri(mContentUri);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
                 }
 
                 mContentValues = null;
@@ -489,6 +491,8 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
     }
 
     private void onTtsInitialized(int status) {
+        mTts.setOnUtteranceCompletedListener(mOnUtteranceCompletedListener);
+
         switch (status) {
             case TextToSpeech.SUCCESS:
                 try {
@@ -663,7 +667,6 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
     private final TextToSpeech.OnInitListener mOnTtsInitListener = new TextToSpeech.OnInitListener() {
         @Override
         public void onInit(int status) {
-            mTts.setOnUtteranceCompletedListener(mOnUtteranceCompletedListener);
             mHandler.onTtsInitialized(status);
         }
     };

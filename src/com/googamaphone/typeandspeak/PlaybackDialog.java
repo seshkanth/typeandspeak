@@ -29,14 +29,15 @@ public class PlaybackDialog extends AlertDialog {
     private final ImageButton mPlayButton;
 
     private File mSavedFile;
-    
+
     @SuppressWarnings("unused")
     private ContentValues mContentValues;
-    
+
     @SuppressWarnings("unused")
     private Uri mContentUri;
 
     private boolean mAdvanceSeekBar;
+    private boolean mMediaPlayerReleased;
 
     public PlaybackDialog(Context context) {
         super(context);
@@ -68,9 +69,15 @@ public class PlaybackDialog extends AlertDialog {
     public void onStop() {
         mPoller.stopPolling();
         mMediaPlayer.release();
+
+        mMediaPlayerReleased = true;
     }
 
     public void setFile(ContentValues contentValues) throws IOException {
+        if (mMediaPlayerReleased) {
+            throw new IOException("Media player was already released!");
+        }
+
         final String path = contentValues.getAsString(Media.DATA);
 
         final TextView message = (TextView) mContentView.findViewById(R.id.message);
@@ -162,10 +169,11 @@ public class PlaybackDialog extends AlertDialog {
                         if (mAdvanceSeekBar) {
                             mProgress.setMax(mMediaPlayer.getDuration());
                             mProgress.setProgress(mMediaPlayer.getCurrentPosition());
-                            
-                            Log.e("playback", "set progress to " + mProgress.getProgress() + " of " + mProgress.getMax());
+
+                            Log.e("playback", "set progress to " + mProgress.getProgress() + " of "
+                                    + mProgress.getMax());
                         }
-    
+
                         startPolling();
                     }
 
