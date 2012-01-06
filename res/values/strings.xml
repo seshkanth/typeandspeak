@@ -19,10 +19,10 @@
   <string name="failed_init">Failed to initialize speech synthesizer</string>
   <string name="album_name">Saved Speech</string>
   <string name="select_locale">Please select a language</string>
-  <string name="speaking">Speaking...</string>
+  <string name="speaking">Speaking…</string>
   
   <string name="install_data_title">Install Language data?</string>
-  <string name="install_data_message">Type and Speak requires speech synthesis data.\n\nClick OK to download Google\'s synthesis data installer from the App Market.</string> 
+  <string name="install_data_message">Type and Speak requires speech synthesis data.\n\nClick OK to download synthesis data for your text-to-speech engine.</string> 
   
   <string name="save_file_title">Save as WAV</string>
   <string name="save_file_message">Under what name would you like to save this speech?</string>
@@ -36,7 +36,7 @@
   <string name="help_title">SSML Tags</string>
   <string name="help_message">SSML tags work like HTML tags.\n\nTo change the properties of a specific word, place that word inside a set of tags such as:\n\n<small>this is &lt;pitch level=&quot;150&quot;&gt;high&lt;/pitch&gt;</small></string>
   
-  <string name="saving_title">Please wait...</string>
+  <string name="saving_title">Please wait…</string>
   <string name="saving_message">Saving speech to SD card as %s.wav</string>
   
   <string name="canceled_title">Save Canceled</string>
