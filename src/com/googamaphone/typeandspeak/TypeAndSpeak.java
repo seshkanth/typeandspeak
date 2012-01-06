@@ -391,10 +391,10 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
     }
 
     private void onTtsCheck(int resultCode, Intent data) {
-        if (resultCode != Engine.CHECK_VOICE_DATA_PASS || data == null) {
+        // If data is null, always prompt the user to install voice data.
+        if (data == null) {
             mSpeakButton.setEnabled(false);
             mWriteButton.setEnabled(false);
-
             showDialog(DIALOG_INSTALL_DATA);
             return;
         }
@@ -402,9 +402,9 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
         mSpeakButton.setEnabled(true);
         mWriteButton.setEnabled(true);
 
-        TreeSet<Language> locales = new TreeSet<Language>();
+        final TreeSet<Language> locales = new TreeSet<Language>();
+        final Bundle extras = data.getExtras();
 
-        Bundle extras = data.getExtras();
         Object langs = extras.get(Engine.EXTRA_VOICE_DATA_FILES_INFO);
 
         // If this is a newer engine, it may be using a different key.
@@ -419,27 +419,40 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
 
         if (langs instanceof Iterable<?>) {
             @SuppressWarnings("unchecked")
-            Iterable<String> strLocales = (Iterable<String>) langs;
+            final Iterable<String> strLocales = (Iterable<String>) langs;
 
             for (String strLocale : strLocales) {
                 locales.add(new Language(strLocale));
             }
         }
 
+        // If we didn't explicitly pass the voice data check AND we don't have
+        // any available locales, prompt the user to install voice data.
+        if ((resultCode != TextToSpeech.Engine.CHECK_VOICE_DATA_PASS) && locales.isEmpty()) {
+            mSpeakButton.setEnabled(false);
+            mWriteButton.setEnabled(false);
+            showDialog(DIALOG_INSTALL_DATA);
+            return;
+        }
+
+        // Add the available locales to the adapter.
         for (Language locale : locales) {
             mLanguageAdapter.add(locale);
         }
 
-        View language_panel = findViewById(R.id.language_panel);
+        final View language_panel = findViewById(R.id.language_panel);
 
+        // Hide the language panel if we didn't find any available locales.
         if (mLanguageAdapter.getCount() <= 0) {
             language_panel.setVisibility(View.GONE);
         } else {
             language_panel.setVisibility(View.VISIBLE);
         }
 
-        // Set the selection from preferences, unless something went crazy
-        SharedPreferences prefs = getPreferences(Context.MODE_PRIVATE);
+        final SharedPreferences prefs = getPreferences(Context.MODE_PRIVATE);
+
+        // Set the selection from preferences, unless something went crazy.
+        // TODO(alanv): This should store a locale, not an index.
         int sel = prefs.getInt(PREF_LANG, 0);
         sel = sel < mLanguageSpinner.getCount() ? sel : 0;
         mLanguageSpinner.setSelection(sel);
