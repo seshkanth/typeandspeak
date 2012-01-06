@@ -28,6 +28,7 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
+import android.provider.Settings;
 import android.provider.MediaStore.Audio.Media;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.TextToSpeech.Engine;
@@ -51,6 +52,9 @@ import com.googamaphone.GoogamaphoneActivity;
 public class TypeAndSpeak extends GoogamaphoneActivity {
     private static final String TAG = "TypeAndSpeak";
 
+    /** Extra used to enumerate available voices. */
+    private static final String EXTRA_AVAILABLE_VOICES = "availableVoices";
+
     private static final String PREF_LANG = "PREF_LANG";
     private static final String PREF_PITCH = "PREF_PITCH";
     private static final String PREF_SPEED = "PREF_SPEED";
@@ -65,6 +69,7 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
     private static final int REQUEST_CHECK_DATA = 1;
     private static final int REQUEST_INSTALL_DATA = 2;
 
+    private String mTtsEngine;
     private TextToSpeech mTts;
 
     private View mSpeakButton;
@@ -122,7 +127,7 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
             @Override
             public void onInit(final int status) {
                 mTts.setOnUtteranceCompletedListener(mOnUtteranceCompletedListener);
-                
+
                 mHandler.post(new Runnable() {
                     @Override
                     public void run() {
@@ -132,6 +137,8 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
             }
         };
 
+        mTtsEngine = Settings.Secure.getString(getContentResolver(),
+                Settings.Secure.TTS_DEFAULT_SYNTH);
         mTts = new TextToSpeech(this, onInit);
 
         final Intent intent = getIntent();
@@ -178,6 +185,7 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
                         switch (which) {
                             case DialogInterface.BUTTON_POSITIVE: {
                                 Intent intent = new Intent(Engine.ACTION_INSTALL_TTS_DATA);
+                                intent.setPackage(mTtsEngine);
                                 startActivityForResult(intent, REQUEST_INSTALL_DATA);
                                 break;
                             }
@@ -276,22 +284,12 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
         String text = savedInstanceState.getString(Intent.EXTRA_TEXT);
 
         /*
-        if (fromIntent && text.matches("https?\\://.+?\\..+?")) {
-            String content = null;
-
-            try {
-                content = fetchContent(text);
-            } catch (MalformedURLException e) {
-                e.printStackTrace();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-
-            if (content != null) {
-                text = content;
-            }
-        }
-        */
+         * if (fromIntent && text.matches("https?\\://.+?\\..+?")) { String
+         * content = null; try { content = fetchContent(text); } catch
+         * (MalformedURLException e) { e.printStackTrace(); } catch (IOException
+         * e) { e.printStackTrace(); } if (content != null) { text = content; }
+         * }
+         */
 
         if (text != null) {
             mInputText.setText(text);
@@ -393,60 +391,58 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
     }
 
     private void onTtsCheck(int resultCode, Intent data) {
-        if (resultCode == Engine.CHECK_VOICE_DATA_PASS && data != null) {
-            mSpeakButton.setEnabled(true);
-            mWriteButton.setEnabled(true);
+        if (resultCode != Engine.CHECK_VOICE_DATA_PASS || data == null) {
+            mSpeakButton.setEnabled(false);
+            mWriteButton.setEnabled(false);
 
-            TreeSet<Language> locales = new TreeSet<Language>();
-
-            Bundle extras = data.getExtras();
-            Object langs = extras.get(Engine.EXTRA_VOICE_DATA_FILES_INFO);
-
-            // Some engines return a String[], which is not an Iterable<?>
-            if (langs instanceof String[]) {
-                langs = Arrays.asList((String[]) langs);
-            }
-
-            if (langs instanceof Iterable<?>) {
-                @SuppressWarnings("unchecked")
-                Iterable<String> strLocales = (Iterable<String>) langs;
-
-                for (String strLocale : strLocales) {
-                    String[] aryLocale = strLocale.split("-");
-
-                    if (aryLocale.length == 2) {
-                        Locale tmpLocale = new Locale(aryLocale[0], aryLocale[1]);
-                        Language locale = new Language(tmpLocale);
-                        locales.add(locale);
-                    }
-                }
-            }
-
-            for (Language locale : locales) {
-                mLanguageAdapter.add(locale);
-            }
-
-            View language_panel = findViewById(R.id.language_panel);
-
-            if (mLanguageAdapter.getCount() <= 0) {
-                language_panel.setVisibility(View.GONE);
-            } else {
-                language_panel.setVisibility(View.VISIBLE);
-            }
-
-            // Set the selection from preferences, unless something went crazy
-            SharedPreferences prefs = getPreferences(Context.MODE_PRIVATE);
-            int sel = prefs.getInt(PREF_LANG, 0);
-            sel = sel < mLanguageSpinner.getCount() ? sel : 0;
-            mLanguageSpinner.setSelection(sel);
-
+            showDialog(DIALOG_INSTALL_DATA);
             return;
         }
 
-        mSpeakButton.setEnabled(false);
-        mWriteButton.setEnabled(false);
+        mSpeakButton.setEnabled(true);
+        mWriteButton.setEnabled(true);
 
-        showDialog(DIALOG_INSTALL_DATA);
+        TreeSet<Language> locales = new TreeSet<Language>();
+
+        Bundle extras = data.getExtras();
+        Object langs = extras.get(Engine.EXTRA_VOICE_DATA_FILES_INFO);
+
+        // If this is a newer engine, it may be using a different key.
+        if (langs == null) {
+            langs = extras.get(EXTRA_AVAILABLE_VOICES);
+        }
+
+        // Some engines return a String[], which is not an Iterable<?>
+        if (langs instanceof String[]) {
+            langs = Arrays.asList((String[]) langs);
+        }
+
+        if (langs instanceof Iterable<?>) {
+            @SuppressWarnings("unchecked")
+            Iterable<String> strLocales = (Iterable<String>) langs;
+
+            for (String strLocale : strLocales) {
+                locales.add(new Language(strLocale));
+            }
+        }
+
+        for (Language locale : locales) {
+            mLanguageAdapter.add(locale);
+        }
+
+        View language_panel = findViewById(R.id.language_panel);
+
+        if (mLanguageAdapter.getCount() <= 0) {
+            language_panel.setVisibility(View.GONE);
+        } else {
+            language_panel.setVisibility(View.VISIBLE);
+        }
+
+        // Set the selection from preferences, unless something went crazy
+        SharedPreferences prefs = getPreferences(Context.MODE_PRIVATE);
+        int sel = prefs.getInt(PREF_LANG, 0);
+        sel = sel < mLanguageSpinner.getCount() ? sel : 0;
+        mLanguageSpinner.setSelection(sel);
     }
 
     private void onTtsInit(int status) {
@@ -454,6 +450,7 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
             case TextToSpeech.SUCCESS:
                 try {
                     Intent intent = new Intent(Engine.ACTION_CHECK_TTS_DATA);
+                    intent.setPackage(mTtsEngine);
                     startActivityForResult(intent, REQUEST_CHECK_DATA);
                     break;
                 } catch (ActivityNotFoundException e) {
@@ -467,7 +464,7 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
 
     private void writeInput(String filename) {
         mCanceled = false;
-        
+
         if (filename.toLowerCase().endsWith(".wav")) {
             filename = filename.substring(0, filename.length() - 4);
         }

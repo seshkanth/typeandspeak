@@ -7,8 +7,8 @@ public class Language implements Comparable<Language> {
     private Locale mLocale;
     private int mFlagId;
 
-    public Language(Locale locale) {
-        mLocale = locale;
+    public Language(String locale) {
+        mLocale = new Locale(locale);
 
         String lang = mLocale.getISO3Language();
         String ctry = mLocale.getISO3Country();
