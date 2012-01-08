@@ -12,7 +12,7 @@ import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Handler;
 import android.os.Message;
-import android.provider.MediaStore.Audio.Media;
+import android.provider.MediaStore.MediaColumns;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -78,7 +78,7 @@ public class PlaybackDialog extends AlertDialog {
             throw new IOException("Media player was already released!");
         }
 
-        final String path = contentValues.getAsString(Media.DATA);
+        final String path = contentValues.getAsString(MediaColumns.DATA);
 
         final TextView message = (TextView) mContentView.findViewById(R.id.message);
         message.setText(getContext().getString(R.string.saved_message, path));
@@ -149,7 +149,7 @@ public class PlaybackDialog extends AlertDialog {
         @Override
         public void onClick(DialogInterface dialog, int which) {
             switch (which) {
-                case AlertDialog.BUTTON_POSITIVE:
+                case DialogInterface.BUTTON_POSITIVE:
                     dismiss();
                     break;
             }

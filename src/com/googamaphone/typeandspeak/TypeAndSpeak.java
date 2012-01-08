@@ -29,8 +29,10 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
-import android.provider.Settings;
+import android.provider.MediaStore.Audio.AudioColumns;
 import android.provider.MediaStore.Audio.Media;
+import android.provider.MediaStore.MediaColumns;
+import android.provider.Settings;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.TextToSpeech.Engine;
 import android.text.Editable;
@@ -40,6 +42,7 @@ import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup.LayoutParams;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemSelectedListener;
 import android.widget.EditText;
@@ -178,7 +181,7 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
                     public void onClick(DialogInterface dialog, int which) {
                         switch (which) {
                             case DialogInterface.BUTTON_POSITIVE: {
-                                Intent intent = new Intent(Engine.ACTION_INSTALL_TTS_DATA);
+                                final Intent intent = new Intent(Engine.ACTION_INSTALL_TTS_DATA);
                                 intent.setPackage(mTtsEngine);
                                 startActivityForResult(intent, REQUEST_INSTALL_DATA);
                                 break;
@@ -201,10 +204,9 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
 
             case DIALOG_SAVE_FILE: {
                 final EditText editText = new EditText(this);
-                LinearLayout layout = new LinearLayout(this);
-                LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.FILL_PARENT,
-                        LinearLayout.LayoutParams.WRAP_CONTENT);
+                final LinearLayout layout = new LinearLayout(this);
+                final LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                        LayoutParams.FILL_PARENT, LayoutParams.WRAP_CONTENT);
                 params.setMargins(10, 0, 10, 0);
                 layout.addView(editText, params);
 
@@ -213,7 +215,7 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
                     public void onClick(DialogInterface dialog, int which) {
                         switch (which) {
                             case DialogInterface.BUTTON_POSITIVE: {
-                                String filename = editText.getText().toString();
+                                final String filename = editText.getText().toString();
                                 writeInput(filename);
                                 break;
                             }
@@ -287,11 +289,11 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
             case DIALOG_PLAYBACK:
                 final PlaybackDialog playback = (PlaybackDialog) dialog;
 
-                if (mContentValues != null && mContentUri != null) {
+                if ((mContentValues != null) && (mContentUri != null)) {
                     try {
                         playback.setFile(mContentValues);
                         playback.setUri(mContentUri);
-                    } catch (IOException e) {
+                    } catch (final IOException e) {
                         e.printStackTrace();
                     }
                 }
@@ -320,7 +322,7 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
      * @param savedInstanceState The previously saved state.
      */
     private void restoreState(Bundle savedInstanceState, boolean fromIntent) {
-        String text = savedInstanceState.getString(Intent.EXTRA_TEXT);
+        final String text = savedInstanceState.getString(Intent.EXTRA_TEXT);
 
         /*
          * if (fromIntent && text.matches("https?\\://.+?\\..+?")) { String
@@ -361,7 +363,7 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
      * @param values The media descriptor values.
      */
     private void onSaveCompleted(ContentValues values) {
-        final String path = values.getAsString(Media.DATA);
+        final String path = values.getAsString(MediaColumns.DATA);
         final Uri inserted = getContentResolver().insert(Media.getContentUriForPath(path), values);
 
         mContentValues = values;
@@ -374,7 +376,7 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
             if (mProgressDialog.isShowing()) {
                 mProgressDialog.dismiss();
             }
-        } catch (IllegalArgumentException e) {
+        } catch (final IllegalArgumentException e) {
             e.printStackTrace();
         }
 
@@ -388,22 +390,22 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
      */
     private void onSaveCanceled(ContentValues values) {
         try {
-            String path = values.getAsString(Media.DATA);
+            final String path = values.getAsString(MediaColumns.DATA);
             new File(path).delete();
-        } catch (Exception e) {
+        } catch (final Exception e) {
             e.printStackTrace();
         }
 
-        String title = getString(R.string.canceled_title);
-        String message = getString(R.string.canceled_message);
-        AlertDialog alert = new Builder(this).setTitle(title).setMessage(message)
+        final String title = getString(R.string.canceled_title);
+        final String message = getString(R.string.canceled_message);
+        final AlertDialog alert = new Builder(this).setTitle(title).setMessage(message)
                 .setPositiveButton(android.R.string.ok, null).create();
 
         mTts.stop();
 
         try {
             alert.show();
-        } catch (RuntimeException e) {
+        } catch (final RuntimeException e) {
             e.printStackTrace();
         }
     }
@@ -453,7 +455,7 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
             @SuppressWarnings("unchecked")
             final Iterable<String> strLocales = (Iterable<String>) langs;
 
-            for (String strLocale : strLocales) {
+            for (final String strLocale : strLocales) {
                 locales.add(new Language(strLocale));
             }
         }
@@ -468,7 +470,7 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
         }
 
         // Add the available locales to the adapter.
-        for (Language locale : locales) {
+        for (final Language locale : locales) {
             mLanguageAdapter.add(locale);
         }
 
@@ -496,11 +498,11 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
         switch (status) {
             case TextToSpeech.SUCCESS:
                 try {
-                    Intent intent = new Intent(Engine.ACTION_CHECK_TTS_DATA);
+                    final Intent intent = new Intent(Engine.ACTION_CHECK_TTS_DATA);
                     intent.setPackage(mTtsEngine);
                     startActivityForResult(intent, REQUEST_CHECK_DATA);
                     break;
-                } catch (ActivityNotFoundException e) {
+                } catch (final ActivityNotFoundException e) {
                     e.printStackTrace();
                 }
                 //$FALL-THROUGH$
@@ -509,7 +511,7 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
         }
 
         // Set the selection from preferences, unless something went crazy
-        SharedPreferences prefs = getPreferences(Context.MODE_PRIVATE);
+        final SharedPreferences prefs = getPreferences(Context.MODE_PRIVATE);
         int sel = prefs.getInt(PREF_LANG, 0);
         sel = sel < mLanguageSpinner.getCount() ? sel : 0;
         mLanguageSpinner.setSelection(sel);
@@ -531,7 +533,8 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
             return;
         }
 
-        String directory = Environment.getExternalStorageDirectory().getPath() + "/media/audio";
+        final String directory = Environment.getExternalStorageDirectory().getPath()
+                + "/media/audio";
 
         final File outdir = new File(directory);
         final File outfile = new File(directory + "/" + filename + ".wav");
@@ -553,16 +556,16 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
             final Locale locale = wrapLocale == null ? Locale.UK : wrapLocale.getLocale();
 
             final ContentValues values = new ContentValues(10);
-            values.put(Media.DISPLAY_NAME, filename);
-            values.put(Media.TITLE, filename);
-            values.put(Media.ARTIST, getString(R.string.app_name));
-            values.put(Media.ALBUM, getString(R.string.album_name));
-            values.put(Media.IS_ALARM, true);
-            values.put(Media.IS_RINGTONE, true);
-            values.put(Media.IS_NOTIFICATION, true);
-            values.put(Media.IS_MUSIC, true);
-            values.put(Media.MIME_TYPE, "audio/wav");
-            values.put(Media.DATA, outfile.getAbsolutePath());
+            values.put(MediaColumns.DISPLAY_NAME, filename);
+            values.put(MediaColumns.TITLE, filename);
+            values.put(AudioColumns.ARTIST, getString(R.string.app_name));
+            values.put(AudioColumns.ALBUM, getString(R.string.album_name));
+            values.put(AudioColumns.IS_ALARM, true);
+            values.put(AudioColumns.IS_RINGTONE, true);
+            values.put(AudioColumns.IS_NOTIFICATION, true);
+            values.put(AudioColumns.IS_MUSIC, true);
+            values.put(MediaColumns.MIME_TYPE, "audio/wav");
+            values.put(MediaColumns.DATA, outfile.getAbsolutePath());
 
             final String utteranceId = Integer.toString(values.hashCode());
             mContentMap.put(utteranceId, values);
@@ -589,7 +592,7 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
 
         try {
             alert.show();
-        } catch (RuntimeException e) {
+        } catch (final RuntimeException e) {
             e.printStackTrace();
         }
     }
@@ -623,7 +626,7 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
 
         // Backwards selection works, too.
         if (start > end) {
-            int temp = start;
+            final int temp = start;
             start = end;
             end = temp;
         }

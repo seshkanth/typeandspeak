@@ -4,14 +4,14 @@ package com.googamaphone.typeandspeak;
 import java.util.Locale;
 
 public class Language implements Comparable<Language> {
-    private Locale mLocale;
+    private final Locale mLocale;
     private int mFlagId;
 
     public Language(String locale) {
         mLocale = new Locale(locale);
 
-        String lang = mLocale.getISO3Language();
-        String ctry = mLocale.getISO3Country();
+        final String lang = mLocale.getISO3Language();
+        final String ctry = mLocale.getISO3Country();
 
         if ("eng".equals(lang)) {
             if ("USA".equals(ctry)) {
@@ -43,8 +43,8 @@ public class Language implements Comparable<Language> {
 
     @Override
     public int compareTo(Language other) {
-        String language = toString();
-        String otherLanguage = other.toString();
+        final String language = toString();
+        final String otherLanguage = other.toString();
 
         return language.compareTo(otherLanguage);
     }

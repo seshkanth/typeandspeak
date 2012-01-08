@@ -8,7 +8,7 @@ import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 
 public class LanguageAdapter extends ArrayAdapter<Language> {
-    private int mImageId;
+    private final int mImageId;
 
     public LanguageAdapter(Context context, int layoutId, int textId, int imageId) {
         super(context, layoutId, textId);
@@ -23,11 +23,11 @@ public class LanguageAdapter extends ArrayAdapter<Language> {
         try {
             view = super.getView(position, convertView, parent);
 
-            Language lang = getItem(position);
+            final Language lang = getItem(position);
 
-            ImageView image = (ImageView) view.findViewById(mImageId);
+            final ImageView image = (ImageView) view.findViewById(mImageId);
             image.setImageResource(lang.getFlagResource());
-        } catch (IndexOutOfBoundsException e) {
+        } catch (final IndexOutOfBoundsException e) {
             e.printStackTrace();
         }
 
@@ -41,11 +41,11 @@ public class LanguageAdapter extends ArrayAdapter<Language> {
         try {
             view = super.getDropDownView(position, convertView, parent);
 
-            Language lang = getItem(position);
+            final Language lang = getItem(position);
 
-            ImageView image = (ImageView) view.findViewById(mImageId);
+            final ImageView image = (ImageView) view.findViewById(mImageId);
             image.setImageResource(lang.getFlagResource());
-        } catch (IndexOutOfBoundsException e) {
+        } catch (final IndexOutOfBoundsException e) {
             e.printStackTrace();
         }
 
