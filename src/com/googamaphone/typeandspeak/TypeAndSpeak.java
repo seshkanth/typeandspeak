@@ -411,7 +411,7 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
         final String preferredLocale = prefs.getString(PREF_LOCALE, Locale.getDefault().toString());
 
         final LanguageAdapter languageAdapter = new LanguageAdapter(this, R.layout.language,
-                R.id.text);
+                R.id.text, R.id.image);
         languageAdapter.setDropDownViewResource(R.layout.language_dropdown);
 
         int preferredSelection = 0;

@@ -41,4 +41,6 @@
   <string name="lasers_title">Lasers!</string>
   <string name="pew_pew">Pew pew!</string>
   <string name="cats_with_lasers">Cats with lasers!</string>
+  
+  <string name="flag">Flag</string>
 </resources>

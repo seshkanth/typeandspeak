@@ -4,19 +4,22 @@ package com.googamaphone.typeandspeak;
 import java.util.Locale;
 
 import android.content.Context;
-import android.graphics.drawable.Drawable;
+import android.text.TextUtils;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 public class LanguageAdapter extends ArrayAdapter<Locale> {
-    private final int mTextViewId;
+    private final int mTextId;
+    private final int mImageId;
 
-    public LanguageAdapter(Context context, int layoutId, int textId) {
+    public LanguageAdapter(Context context, int layoutId, int textId, int imageId) {
         super(context, layoutId, textId);
 
-        mTextViewId = textId;
+        mTextId = textId;
+        mImageId = imageId;
     }
 
     @Override
@@ -40,10 +43,48 @@ public class LanguageAdapter extends ArrayAdapter<Locale> {
     private void setFlagDrawable(int position, View view) {
         final Locale locale = getItem(position);
         final int drawableId = getFlagForLocale(locale);
-        final Drawable drawable = getContext().getResources().getDrawable(drawableId);
-        final TextView textView = (TextView) view.findViewById(mTextViewId);
 
-        textView.setCompoundDrawables(drawable, null, null, null);
+        final TextView textView = (TextView) view.findViewById(mTextId);
+        textView.setText(getDisplayNameForLocale(locale));
+
+        final ImageView imageView = (ImageView) view.findViewById(mImageId);
+        imageView.setImageResource(drawableId);
+    }
+
+    private static CharSequence getDisplayNameForLocale(Locale locale) {
+        final CharSequence displayName = locale.getDisplayName();
+        if (!TextUtils.isEmpty(displayName)) {
+            return displayName;
+        }
+
+        final StringBuilder builder = new StringBuilder();
+
+        final CharSequence language = locale.getDisplayLanguage();
+        final CharSequence country = locale.getDisplayCountry();
+        final CharSequence variant = locale.getDisplayVariant();
+
+        // If the language is empty, there's no hope here.
+        if (TextUtils.isEmpty(language)) {
+            return locale.toString();
+        }
+
+        builder.append(language);
+
+        if (!TextUtils.isEmpty(country)) {
+            builder.append(" (");
+            builder.append(country);
+            if (!TextUtils.isEmpty(variant)) {
+                builder.append(", ");
+                builder.append(variant);
+            }
+            builder.append(')');
+        } else if (!TextUtils.isEmpty(variant)) {
+            builder.append(" (");
+            builder.append(variant);
+            builder.append(')');
+        }
+
+        return builder;
     }
 
     private static int getFlagForLocale(Locale locale) {
