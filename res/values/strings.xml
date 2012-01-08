@@ -1,24 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
   <string name="app_name">Type and Speak</string>
-  <string name="language">Language</string>
-  <string name="adjust">Adjustments</string>
   <string name="pitch">Pitch</string>
   <string name="speed">Speed</string>
-  <string name="volume">Volume</string>
-  <string name="ssml">SSML Tags</string>
-  <string name="help">"?"</string>
   <string name="speak">Speak</string>
   
   <string name="spoken_clear">Clear</string>
   <string name="spoken_write">Save</string>
   <string name="spoken_prefs">Properties</string>
   
-  <string name="unknown_data_type">Failed to load text: Unsupported data type!</string>
-  
   <string name="failed_init">Failed to initialize speech synthesizer</string>
   <string name="album_name">Saved Speech</string>
-  <string name="select_locale">Please select a language</string>
   <string name="speaking">Speaking…</string>
   
   <string name="install_data_title">Install Language data?</string>
@@ -33,9 +25,6 @@
   <string name="exists_title">Error</string>
   <string name="exists_message">File %s.wav already exists on SD card!</string>
   
-  <string name="help_title">SSML Tags</string>
-  <string name="help_message">SSML tags work like HTML tags.\n\nTo change the properties of a specific word, place that word inside a set of tags such as:\n\n<small>this is &lt;pitch level=&quot;150&quot;&gt;high&lt;/pitch&gt;</small></string>
-  
   <string name="saving_title">Please wait…</string>
   <string name="saving_message">Saving speech to SD card as %s.wav</string>
   
@@ -44,14 +33,12 @@
   
   <string name="saved_title">Saved as WAV</string>
   <string name="saved_message">Speech has been saved to SD card as %s. It has also been added to the device media library.</string>
-  <string name="open_library">Open library</string>
-  <string name="ok_continue">Continue</string>
+  <string name="play">Play</string>
   
   <string name="properties_title">Speech Properties</string>
-  
-  <string name="speed_tag">&lt;speed level=&quot;100&quot;&gt;%s&lt;/speed&gt;</string>
   
   <string name="lasers">Lasers!</string>
   <string name="lasers_title">Lasers!</string>
   <string name="pew_pew">Pew pew!</string>
+  <string name="cats_with_lasers">Cats with lasers!</string>
 </resources>

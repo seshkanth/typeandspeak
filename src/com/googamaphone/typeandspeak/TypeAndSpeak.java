@@ -6,9 +6,9 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Locale;
-import java.util.Set;
-import java.util.TreeSet;
 
 import android.app.AlertDialog;
 import android.app.AlertDialog.Builder;
@@ -34,7 +34,6 @@ import android.provider.MediaStore.MediaColumns;
 import android.provider.Settings;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.TextToSpeech.Engine;
-import android.text.Editable;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -67,7 +66,6 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
 
     private static final int DIALOG_INSTALL_DATA = 1;
     private static final int DIALOG_SAVE_FILE = 2;
-    private static final int DIALOG_HELP = 3;
     private static final int DIALOG_PROPERTIES = 4;
     private static final int DIALOG_PLAYBACK = 5;
     private static final int DIALOG_LASERS = 6;
@@ -189,12 +187,6 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
                         .setNegativeButton(android.R.string.no, onClick).create();
             }
 
-            case DIALOG_HELP: {
-                return new Builder(this).setMessage(R.string.help_message)
-                        .setTitle(R.string.help_title).setPositiveButton(android.R.string.ok, null)
-                        .create();
-            }
-
             case DIALOG_SAVE_FILE: {
                 final EditText editText = new EditText(this);
                 final LinearLayout layout = new LinearLayout(this);
@@ -227,9 +219,6 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
                 final View properties = LayoutInflater.from(this)
                         .inflate(R.layout.properties, null);
 
-                properties.findViewById(R.id.btnPitch).setOnClickListener(mOnClickListener);
-                properties.findViewById(R.id.btnSpeed).setOnClickListener(mOnClickListener);
-                properties.findViewById(R.id.btnHelp).setOnClickListener(mOnClickListener);
                 ((SeekBar) properties.findViewById(R.id.seekPitch))
                         .setOnSeekBarChangeListener(mSeekListener);
                 ((SeekBar) properties.findViewById(R.id.seekSpeed))
@@ -403,7 +392,7 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
         mWriteButton.setEnabled(true);
 
         final boolean passed = (resultCode != TextToSpeech.Engine.CHECK_VOICE_DATA_PASS);
-        final Set<Language> locales = loadTtsLanguages(data);
+        final List<Locale> locales = loadTtsLanguages(data);
 
         if (!locales.isEmpty() || passed) {
             mSpeakButton.setEnabled(true);
@@ -416,23 +405,23 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
         }
     }
 
-    private void populateAdapter(Set<Language> locales) {
+    private void populateAdapter(List<Locale> locales) {
         // Attempt to load the preferred locale from preferences.
         final SharedPreferences prefs = getPreferences(Context.MODE_PRIVATE);
         final String preferredLocale = prefs.getString(PREF_LOCALE, Locale.getDefault().toString());
 
         final LanguageAdapter languageAdapter = new LanguageAdapter(this, R.layout.language,
-                R.id.text, R.id.image);
+                R.id.text);
         languageAdapter.setDropDownViewResource(R.layout.language_dropdown);
 
         int preferredSelection = 0;
 
         // Add the available locales to the adapter, watching for the preferred
         // locale.
-        for (final Language locale : locales) {
+        for (final Locale locale : locales) {
             languageAdapter.add(locale);
 
-            if (locale.getLocale().toString().equals(preferredLocale)) {
+            if (locale.toString().equals(preferredLocale)) {
                 preferredSelection = (languageAdapter.getCount() - 1);
             }
         }
@@ -451,9 +440,9 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
         mLanguageSpinner.setSelection(preferredSelection);
     }
 
-    private Set<Language> loadTtsLanguages(Intent data) {
+    private List<Locale> loadTtsLanguages(Intent data) {
         if (data == null) {
-            return Collections.emptySet();
+            return Collections.emptyList();
         }
 
         final Bundle extras = data.getExtras();
@@ -472,14 +461,14 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
 
         // If it's not iterable, fail.
         if (!(langs instanceof Iterable<?>)) {
-            return Collections.emptySet();
+            return Collections.emptyList();
         }
 
         final Iterable<?> strLocales = (Iterable<?>) langs;
-        final TreeSet<Language> locales = new TreeSet<Language>();
+        final LinkedList<Locale> locales = new LinkedList<Locale>();
 
         for (final Object strLocale : strLocales) {
-            locales.add(new Language(strLocale.toString()));
+            locales.add(new Locale(strLocale.toString()));
         }
 
         return locales;
@@ -538,10 +527,13 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
             alert = new Builder(this).setTitle(R.string.no_write_title).setMessage(message)
                     .setPositiveButton(android.R.string.ok, null).create();
         } else {
-            final String text = mInputText.getText().toString();
-            final Language wrapLocale = (Language) mLanguageSpinner.getSelectedItem();
-            final Locale locale = wrapLocale == null ? Locale.UK : wrapLocale.getLocale();
+            // Attempt to set the locale.
+            final Locale locale = (Locale) mLanguageSpinner.getSelectedItem();
+            if (locale != null) {
+                mTts.setLanguage(locale);
+            }
 
+            // Populate content values for the media provider.
             final ContentValues values = new ContentValues(10);
             values.put(MediaColumns.DISPLAY_NAME, filename);
             values.put(MediaColumns.TITLE, filename);
@@ -560,18 +552,19 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
             final HashMap<String, String> params = new HashMap<String, String>();
             params.put(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, utteranceId);
 
-            mTts.setLanguage(locale);
             mTts.setPitch(mPitch / 50.0f);
             mTts.setSpeechRate(mSpeed / 50.0f);
+
+            final String text = mInputText.getText().toString();
             mTts.synthesizeToFile(text, params, outfile.getAbsolutePath());
 
             message = getString(R.string.saving_message, filename);
+
             mProgressDialog = new ProgressDialog(this);
             mProgressDialog.setCancelable(true);
             mProgressDialog.setTitle(R.string.saving_title);
             mProgressDialog.setMessage(message);
             mProgressDialog.setIndeterminate(true);
-
             mProgressDialog.setOnCancelListener(mOnCancelListener);
 
             alert = mProgressDialog;
@@ -591,39 +584,16 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
         }
 
         final String text = mInputText.getText().toString();
-        final HashMap<String, String> params = new HashMap<String, String>();
-        final Language locale = (Language) mLanguageSpinner.getSelectedItem();
 
-        params.put(Engine.KEY_PARAM_STREAM, "" + STREAM_TYPE);
-
+        // Attempt to set the locale.
+        final Locale locale = (Locale) mLanguageSpinner.getSelectedItem();
         if (locale != null) {
-            mTts.setLanguage(locale.getLocale());
+            mTts.setLanguage(locale);
         }
 
         mTts.setPitch(mPitch / 50.0f);
         mTts.setSpeechRate(mSpeed / 50.0f);
-        mTts.speak(text, TextToSpeech.QUEUE_FLUSH, params);
-    }
-
-    private void applyTag(String tag) {
-        final Editable editable = mInputText.getEditableText();
-
-        int start = mInputText.getSelectionStart();
-        int end = mInputText.getSelectionEnd();
-
-        // Backwards selection works, too.
-        if (start > end) {
-            final int temp = start;
-            start = end;
-            end = temp;
-        }
-
-        final CharSequence selection = editable.subSequence(start, end);
-        final CharSequence replacement = String.format("<%s level=\"100\">%s</%s>", tag, selection,
-                tag);
-        editable.replace(start, end, replacement);
-        start += tag.length() + 9;
-        mInputText.setSelection(start, start + 3);
+        mTts.speak(text, TextToSpeech.QUEUE_FLUSH, null);
     }
 
     private final SeekBar.OnSeekBarChangeListener mSeekListener = new SeekBar.OnSeekBarChangeListener() {
@@ -695,18 +665,6 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
                 case R.id.write:
                     write();
                     break;
-                case R.id.btnPitch:
-                    applyTag("pitch");
-                    break;
-                case R.id.btnVolume:
-                    applyTag("volume");
-                    break;
-                case R.id.btnSpeed:
-                    applyTag("speed");
-                    break;
-                case R.id.btnHelp:
-                    showDialog(DIALOG_HELP);
-                    break;
             }
         }
     };
@@ -722,10 +680,11 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
     private final OnItemSelectedListener mOnLangSelected = new OnItemSelectedListener() {
         @Override
         public void onItemSelected(AdapterView<?> view, View parent, int position, long id) {
-            final Language selectedLanguage = (Language) mLanguageSpinner.getSelectedItem();
+            final Locale selectedLocale = (Locale) mLanguageSpinner.getSelectedItem();
             final SharedPreferences prefs = getPreferences(Context.MODE_PRIVATE);
             final Editor editor = prefs.edit();
-            editor.putString(PREF_LOCALE, selectedLanguage.getLocale().toString());
+
+            editor.putString(PREF_LOCALE, selectedLocale.toString());
             editor.commit();
         }
 
