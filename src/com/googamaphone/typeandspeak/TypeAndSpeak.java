@@ -3,12 +3,11 @@ package com.googamaphone.typeandspeak;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Locale;
+import java.util.Set;
 import java.util.TreeSet;
 
 import android.app.AlertDialog;
@@ -36,7 +35,6 @@ import android.provider.Settings;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.TextToSpeech.Engine;
 import android.text.Editable;
-import android.text.TextUtils;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -61,7 +59,7 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
 
     private static final int OPTION_LASERS = 1;
 
-    private static final String PREF_LANG = "PREF_LANG";
+    private static final String PREF_LOCALE = "PREF_LOCALE";
     private static final String PREF_PITCH = "PREF_PITCH";
     private static final String PREF_SPEED = "PREF_SPEED";
 
@@ -84,7 +82,6 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
     private View mWriteButton;
     private EditText mInputText;
     private Spinner mLanguageSpinner;
-    private LanguageAdapter mLanguageAdapter;
     private ProgressDialog mProgressDialog;
 
     // Recently saved file information.
@@ -123,11 +120,7 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
         findViewById(R.id.clear).setOnClickListener(mOnClickListener);
         findViewById(R.id.prefs).setOnClickListener(mOnClickListener);
 
-        mLanguageAdapter = new LanguageAdapter(this, R.layout.language, R.id.text, R.id.image);
-        mLanguageAdapter.setDropDownViewResource(R.layout.language_dropdown);
-
         mLanguageSpinner = (Spinner) findViewById(R.id.language_spinner);
-        mLanguageSpinner.setAdapter(mLanguageAdapter);
         mLanguageSpinner.setOnItemSelectedListener(mOnLangSelected);
 
         mInputText = (EditText) findViewById(R.id.input_text);
@@ -324,36 +317,9 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
     private void restoreState(Bundle savedInstanceState, boolean fromIntent) {
         final String text = savedInstanceState.getString(Intent.EXTRA_TEXT);
 
-        /*
-         * if (fromIntent && text.matches("https?\\://.+?\\..+?")) { String
-         * content = null; try { content = fetchContent(text); } catch
-         * (MalformedURLException e) { e.printStackTrace(); } catch (IOException
-         * e) { e.printStackTrace(); } if (content != null) { text = content; }
-         * }
-         */
-
         if (text != null) {
             mInputText.setText(text);
         }
-    }
-
-    @SuppressWarnings("unused")
-    private String fetchContent(String text) throws MalformedURLException, IOException {
-        final URL url = new URL(text);
-        final StringBuffer buffer = new StringBuffer();
-        final InputStreamReader stream = new InputStreamReader(url.openStream());
-        final char[] chars = new char[4096];
-
-        for (int length; (length = stream.read(chars)) > 0;) {
-            buffer.append(chars, 0, length);
-        }
-
-        if (TextUtils.isEmpty(buffer)) {
-            return null;
-        }
-
-        // TODO(alanv): Perform simple content extraction.
-        return buffer.toString();
     }
 
     /**
@@ -370,7 +336,7 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
         mContentUri = inserted;
 
         // Clears last queue element to avoid deletion on exit...
-        mTts.speak("", TextToSpeech.QUEUE_FLUSH, new HashMap<String, String>());
+        mTts.speak("", TextToSpeech.QUEUE_FLUSH, null);
 
         try {
             if (mProgressDialog.isShowing()) {
@@ -436,7 +402,60 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
         mSpeakButton.setEnabled(true);
         mWriteButton.setEnabled(true);
 
-        final TreeSet<Language> locales = new TreeSet<Language>();
+        final boolean passed = (resultCode != TextToSpeech.Engine.CHECK_VOICE_DATA_PASS);
+        final Set<Language> locales = loadTtsLanguages(data);
+
+        if (!locales.isEmpty() || passed) {
+            mSpeakButton.setEnabled(true);
+            mWriteButton.setEnabled(true);
+            populateAdapter(locales);
+        } else {
+            mSpeakButton.setEnabled(false);
+            mWriteButton.setEnabled(false);
+            showDialog(DIALOG_INSTALL_DATA);
+        }
+    }
+
+    private void populateAdapter(Set<Language> locales) {
+        // Attempt to load the preferred locale from preferences.
+        final SharedPreferences prefs = getPreferences(Context.MODE_PRIVATE);
+        final String preferredLocale = prefs.getString(PREF_LOCALE, Locale.getDefault().toString());
+
+        final LanguageAdapter languageAdapter = new LanguageAdapter(this, R.layout.language,
+                R.id.text, R.id.image);
+        languageAdapter.setDropDownViewResource(R.layout.language_dropdown);
+
+        int preferredSelection = 0;
+
+        // Add the available locales to the adapter, watching for the preferred
+        // locale.
+        for (final Language locale : locales) {
+            languageAdapter.add(locale);
+
+            if (locale.getLocale().toString().equals(preferredLocale)) {
+                preferredSelection = (languageAdapter.getCount() - 1);
+            }
+        }
+
+        final View languagePanel = findViewById(R.id.language_panel);
+
+        // Hide the language panel if we didn't find any available locales.
+        if (languageAdapter.getCount() <= 0) {
+            languagePanel.setVisibility(View.GONE);
+        } else {
+            languagePanel.setVisibility(View.VISIBLE);
+        }
+
+        // Set up the language spinner.
+        mLanguageSpinner.setAdapter(languageAdapter);
+        mLanguageSpinner.setSelection(preferredSelection);
+    }
+
+    private Set<Language> loadTtsLanguages(Intent data) {
+        if (data == null) {
+            return Collections.emptySet();
+        }
+
         final Bundle extras = data.getExtras();
 
         Object langs = extras.get(Engine.EXTRA_VOICE_DATA_FILES_INFO);
@@ -451,45 +470,19 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
             langs = Arrays.asList((String[]) langs);
         }
 
-        if (langs instanceof Iterable<?>) {
-            @SuppressWarnings("unchecked")
-            final Iterable<String> strLocales = (Iterable<String>) langs;
-
-            for (final String strLocale : strLocales) {
-                locales.add(new Language(strLocale));
-            }
+        // If it's not iterable, fail.
+        if (!(langs instanceof Iterable<?>)) {
+            return Collections.emptySet();
         }
 
-        // If we didn't explicitly pass the voice data check AND we don't have
-        // any available locales, prompt the user to install voice data.
-        if ((resultCode != TextToSpeech.Engine.CHECK_VOICE_DATA_PASS) && locales.isEmpty()) {
-            mSpeakButton.setEnabled(false);
-            mWriteButton.setEnabled(false);
-            showDialog(DIALOG_INSTALL_DATA);
-            return;
+        final Iterable<?> strLocales = (Iterable<?>) langs;
+        final TreeSet<Language> locales = new TreeSet<Language>();
+
+        for (final Object strLocale : strLocales) {
+            locales.add(new Language(strLocale.toString()));
         }
 
-        // Add the available locales to the adapter.
-        for (final Language locale : locales) {
-            mLanguageAdapter.add(locale);
-        }
-
-        final View language_panel = findViewById(R.id.language_panel);
-
-        // Hide the language panel if we didn't find any available locales.
-        if (mLanguageAdapter.getCount() <= 0) {
-            language_panel.setVisibility(View.GONE);
-        } else {
-            language_panel.setVisibility(View.VISIBLE);
-        }
-
-        final SharedPreferences prefs = getPreferences(Context.MODE_PRIVATE);
-
-        // Set the selection from preferences, unless something went crazy.
-        // TODO(alanv): This should store a locale, not an index.
-        int sel = prefs.getInt(PREF_LANG, 0);
-        sel = sel < mLanguageSpinner.getCount() ? sel : 0;
-        mLanguageSpinner.setSelection(sel);
+        return locales;
     }
 
     private void onTtsInitialized(int status) {
@@ -509,12 +502,6 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
             default:
                 Toast.makeText(this, R.string.failed_init, 2000).show();
         }
-
-        // Set the selection from preferences, unless something went crazy
-        final SharedPreferences prefs = getPreferences(Context.MODE_PRIVATE);
-        int sel = prefs.getInt(PREF_LANG, 0);
-        sel = sel < mLanguageSpinner.getCount() ? sel : 0;
-        mLanguageSpinner.setSelection(sel);
 
         mSpeakButton.setEnabled(true);
         mWriteButton.setEnabled(true);
@@ -735,9 +722,10 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
     private final OnItemSelectedListener mOnLangSelected = new OnItemSelectedListener() {
         @Override
         public void onItemSelected(AdapterView<?> view, View parent, int position, long id) {
+            final Language selectedLanguage = (Language) mLanguageSpinner.getSelectedItem();
             final SharedPreferences prefs = getPreferences(Context.MODE_PRIVATE);
             final Editor editor = prefs.edit();
-            editor.putInt(PREF_LANG, position);
+            editor.putString(PREF_LOCALE, selectedLanguage.getLocale().toString());
             editor.commit();
         }
 
@@ -747,6 +735,7 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
         }
     };
 
+    // TODO(alanv): Is this necessary?
     private class TypeAndSpeakHandler extends Handler {
         private static final int MESSAGE_SAVED = 1;
         private static final int MESSAGE_CANCELED = 2;
