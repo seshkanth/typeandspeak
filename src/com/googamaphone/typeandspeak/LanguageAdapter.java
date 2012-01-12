@@ -1,15 +1,14 @@
 
 package com.googamaphone.typeandspeak;
 
-import java.util.Locale;
-
 import android.content.Context;
-import android.text.TextUtils;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
+
+import java.util.Locale;
 
 public class LanguageAdapter extends ArrayAdapter<Locale> {
     private final int mTextId;
@@ -45,65 +44,29 @@ public class LanguageAdapter extends ArrayAdapter<Locale> {
         final int drawableId = getFlagForLocale(locale);
 
         final TextView textView = (TextView) view.findViewById(mTextId);
-        textView.setText(getDisplayNameForLocale(locale));
+        textView.setText(locale.getDisplayName());
 
         final ImageView imageView = (ImageView) view.findViewById(mImageId);
         imageView.setImageResource(drawableId);
-    }
-
-    private static CharSequence getDisplayNameForLocale(Locale locale) {
-        final CharSequence displayName = locale.getDisplayName();
-        if (!TextUtils.isEmpty(displayName)) {
-            return displayName;
-        }
-
-        final StringBuilder builder = new StringBuilder();
-
-        final CharSequence language = locale.getDisplayLanguage();
-        final CharSequence country = locale.getDisplayCountry();
-        final CharSequence variant = locale.getDisplayVariant();
-
-        // If the language is empty, there's no hope here.
-        if (TextUtils.isEmpty(language)) {
-            return locale.toString();
-        }
-
-        builder.append(language);
-
-        if (!TextUtils.isEmpty(country)) {
-            builder.append(" (");
-            builder.append(country);
-            if (!TextUtils.isEmpty(variant)) {
-                builder.append(", ");
-                builder.append(variant);
-            }
-            builder.append(')');
-        } else if (!TextUtils.isEmpty(variant)) {
-            builder.append(" (");
-            builder.append(variant);
-            builder.append(')');
-        }
-
-        return builder;
     }
 
     private static int getFlagForLocale(Locale locale) {
         final String language = locale.getISO3Language();
         final String country = locale.getISO3Country();
 
-        if ("eng".equals(language)) {
-            if ("USA".equals(country)) {
+        if ("eng".equalsIgnoreCase(language)) {
+            if ("usa".equalsIgnoreCase(country)) {
                 return R.drawable.en_us;
             } else {
                 return R.drawable.en_uk;
             }
-        } else if ("deu".equals(language)) {
+        } else if ("deu".equalsIgnoreCase(language)) {
             return R.drawable.deu;
-        } else if ("spa".equals(language)) {
+        } else if ("spa".equalsIgnoreCase(language)) {
             return R.drawable.spa;
-        } else if ("fra".equals(language)) {
+        } else if ("fra".equalsIgnoreCase(language)) {
             return R.drawable.fra;
-        } else if ("ita".equals(language)) {
+        } else if ("ita".equalsIgnoreCase(language)) {
             return R.drawable.ita;
         } else {
             return R.drawable.unknown;

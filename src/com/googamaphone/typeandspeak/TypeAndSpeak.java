@@ -1,15 +1,6 @@
 
 package com.googamaphone.typeandspeak;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Locale;
-
 import android.app.AlertDialog;
 import android.app.AlertDialog.Builder;
 import android.app.Dialog;
@@ -49,6 +40,16 @@ import android.widget.Spinner;
 import android.widget.Toast;
 
 import com.googamaphone.GoogamaphoneActivity;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Set;
+import java.util.TreeSet;
 
 public class TypeAndSpeak extends GoogamaphoneActivity {
     private static final String TAG = "TypeAndSpeak";
@@ -392,7 +393,7 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
         mWriteButton.setEnabled(true);
 
         final boolean passed = (resultCode != TextToSpeech.Engine.CHECK_VOICE_DATA_PASS);
-        final List<Locale> locales = loadTtsLanguages(data);
+        final Set<Locale> locales = loadTtsLanguages(data);
 
         if (!locales.isEmpty() || passed) {
             mSpeakButton.setEnabled(true);
@@ -405,7 +406,7 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
         }
     }
 
-    private void populateAdapter(List<Locale> locales) {
+    private void populateAdapter(Set<Locale> locales) {
         // Attempt to load the preferred locale from preferences.
         final SharedPreferences prefs = getPreferences(Context.MODE_PRIVATE);
         final String preferredLocale = prefs.getString(PREF_LOCALE, Locale.getDefault().toString());
@@ -413,6 +414,7 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
         final LanguageAdapter languageAdapter = new LanguageAdapter(this, R.layout.language,
                 R.id.text, R.id.image);
         languageAdapter.setDropDownViewResource(R.layout.language_dropdown);
+        languageAdapter.clear();
 
         int preferredSelection = 0;
 
@@ -420,6 +422,8 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
         // locale.
         for (final Locale locale : locales) {
             languageAdapter.add(locale);
+
+            Log.i(TAG, "Found locale " + locale);
 
             if (locale.toString().equals(preferredLocale)) {
                 preferredSelection = (languageAdapter.getCount() - 1);
@@ -440,9 +444,9 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
         mLanguageSpinner.setSelection(preferredSelection);
     }
 
-    private List<Locale> loadTtsLanguages(Intent data) {
+    private Set<Locale> loadTtsLanguages(Intent data) {
         if (data == null) {
-            return Collections.emptyList();
+            return Collections.emptySet();
         }
 
         final Bundle extras = data.getExtras();
@@ -461,14 +465,22 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
 
         // If it's not iterable, fail.
         if (!(langs instanceof Iterable<?>)) {
-            return Collections.emptyList();
+            return Collections.emptySet();
         }
 
         final Iterable<?> strLocales = (Iterable<?>) langs;
-        final LinkedList<Locale> locales = new LinkedList<Locale>();
+        final TreeSet<Locale> locales = new TreeSet<Locale>(mLocaleComparator);
 
         for (final Object strLocale : strLocales) {
-            locales.add(new Locale(strLocale.toString()));
+            final String[] codes = strLocale.toString().split("-");
+            
+            if (codes.length == 1) {
+                locales.add(new Locale(codes[0]));
+            } else if (codes.length == 2) {
+                locales.add(new Locale(codes[0], codes[1]));
+            } else if (codes.length == 3) {
+                locales.add(new Locale(codes[0], codes[1], codes[2]));
+            }
         }
 
         return locales;
@@ -727,4 +739,11 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
             obtainMessage(MESSAGE_TTS_INIT, status, 0).sendToTarget();
         }
     }
+    
+    private final Comparator<Locale> mLocaleComparator = new Comparator<Locale>() {
+        @Override
+        public int compare(Locale lhs, Locale rhs) {
+            return lhs.getDisplayName().compareTo(rhs.getDisplayName());
+        }
+    };
 }
