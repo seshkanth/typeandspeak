@@ -1,11 +1,22 @@
 
 package com.googamaphone.typeandspeak;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Set;
+import java.util.TreeSet;
+
 import android.app.AlertDialog;
 import android.app.AlertDialog.Builder;
 import android.app.Dialog;
 import android.app.ProgressDialog;
 import android.content.ActivityNotFoundException;
+import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -13,12 +24,14 @@ import android.content.DialogInterface.OnCancelListener;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
+import android.database.Cursor;
 import android.media.AudioManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
+import android.provider.MediaStore;
 import android.provider.MediaStore.Audio.AudioColumns;
 import android.provider.MediaStore.Audio.Media;
 import android.provider.MediaStore.MediaColumns;
@@ -26,6 +39,7 @@ import android.provider.Settings;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.TextToSpeech.Engine;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -41,23 +55,13 @@ import android.widget.Toast;
 
 import com.googamaphone.GoogamaphoneActivity;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Set;
-import java.util.TreeSet;
-
 public class TypeAndSpeak extends GoogamaphoneActivity {
     private static final String TAG = "TypeAndSpeak";
 
     /** Extra used to enumerate available voices. */
     private static final String EXTRA_AVAILABLE_VOICES = "availableVoices";
 
-    private static final int OPTION_LASERS = 1;
+    private static final int OPTION_LIBRARY = 1;
 
     private static final String PREF_LOCALE = "PREF_LOCALE";
     private static final String PREF_PITCH = "PREF_PITCH";
@@ -69,7 +73,6 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
     private static final int DIALOG_SAVE_FILE = 2;
     private static final int DIALOG_PROPERTIES = 4;
     private static final int DIALOG_PLAYBACK = 5;
-    private static final int DIALOG_LASERS = 6;
 
     private static final int REQUEST_CHECK_DATA = 1;
     private static final int REQUEST_INSTALL_DATA = 2;
@@ -190,6 +193,8 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
 
             case DIALOG_SAVE_FILE: {
                 final EditText editText = new EditText(this);
+                editText.setSingleLine();
+
                 final LinearLayout layout = new LinearLayout(this);
                 final LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
                         LayoutParams.FILL_PARENT, LayoutParams.WRAP_CONTENT);
@@ -209,11 +214,27 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
                     }
                 };
 
-                return new Builder(this).setMessage(R.string.save_file_message)
+                final AlertDialog dialog = new Builder(this).setMessage(R.string.save_file_message)
                         .setTitle(R.string.save_file_title)
                         .setPositiveButton(android.R.string.ok, onClick)
                         .setNegativeButton(android.R.string.cancel, onClick).setView(layout)
                         .create();
+
+                editText.setOnKeyListener(new View.OnKeyListener() {
+                    @Override
+                    public boolean onKey(View v, int keyCode, KeyEvent event) {
+                        if ((event.getAction() == KeyEvent.ACTION_DOWN)
+                                && (keyCode == KeyEvent.KEYCODE_ENTER)) {
+                            onClick.onClick(dialog, Dialog.BUTTON_POSITIVE);
+                            dialog.dismiss();
+                            return true;
+                        }
+
+                        return false;
+                    }
+                });
+
+                return dialog;
             }
 
             case DIALOG_PROPERTIES: {
@@ -231,13 +252,6 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
 
             case DIALOG_PLAYBACK:
                 return new PlaybackDialog(this);
-
-            case DIALOG_LASERS: {
-                final View lasers = LayoutInflater.from(this).inflate(R.layout.lasers, null);
-
-                return new Builder(this).setView(lasers).setTitle(R.string.lasers_title)
-                        .setPositiveButton(R.string.pew_pew, null).create();
-            }
         }
 
         return null;
@@ -245,8 +259,8 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        menu.add(Menu.NONE, OPTION_LASERS, Menu.NONE, R.string.lasers)
-                .setIcon(android.R.drawable.ic_menu_help).setAlphabeticShortcut('l');
+        menu.add(Menu.NONE, OPTION_LIBRARY, Menu.NONE, R.string.library)
+                .setIcon(android.R.drawable.ic_menu_view).setAlphabeticShortcut('l');
 
         return super.onCreateOptionsMenu(menu);
     }
@@ -254,9 +268,29 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
-            case OPTION_LASERS:
-                showDialog(DIALOG_LASERS);
+            case OPTION_LIBRARY: {
+                final String album = getString(R.string.album_name);
+                final ContentResolver resolver = getContentResolver();
+                final String[] projection = new String[] {
+                        MediaStore.Audio.Albums._ID, MediaStore.Audio.Albums.ALBUM
+                };
+                final String selection = MediaStore.Audio.Albums.ALBUM + "=?";
+                final String[] args = new String[] {
+                    album
+                };
+                final Cursor albums = resolver.query(MediaStore.Audio.Albums.EXTERNAL_CONTENT_URI,
+                        projection, selection, args, null);
+
+                if (albums.moveToFirst()) {
+                    final int albumId = albums.getInt(0);
+                    final Intent intent = new Intent(Intent.ACTION_PICK);
+                    intent.setDataAndType(Uri.EMPTY, "vnd.android.cursor.dir/track");
+                    intent.putExtra("album", albumId);
+                    startActivity(intent);
+                }
+
                 return true;
+            }
         }
 
         return super.onOptionsItemSelected(item);
@@ -473,7 +507,7 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
 
         for (final Object strLocale : strLocales) {
             final String[] codes = strLocale.toString().split("-");
-            
+
             if (codes.length == 1) {
                 locales.add(new Locale(codes[0]));
             } else if (codes.length == 2) {
@@ -739,7 +773,7 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
             obtainMessage(MESSAGE_TTS_INIT, status, 0).sendToTarget();
         }
     }
-    
+
     private final Comparator<Locale> mLocaleComparator = new Comparator<Locale>() {
         @Override
         public int compare(Locale lhs, Locale rhs) {

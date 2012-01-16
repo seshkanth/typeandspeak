@@ -27,10 +27,7 @@
     <string name="saved_message">Speech has been saved to SD card as %s. It has also been added to the device media library.</string>
     <string name="play">Play</string>
     <string name="properties_title">Speech Properties</string>
-    <string name="lasers">Lasers!</string>
-    <string name="lasers_title">Lasers!</string>
-    <string name="pew_pew">Pew pew!</string>
-    <string name="cats_with_lasers">Cats with lasers!</string>
+    <string name="library">Library</string>
     <string name="flag">Flag</string>
 
 </resources>

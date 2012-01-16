@@ -13,7 +13,6 @@ import android.net.Uri;
 import android.os.Handler;
 import android.os.Message;
 import android.provider.MediaStore.MediaColumns;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.ImageButton;
@@ -169,9 +168,6 @@ public class PlaybackDialog extends AlertDialog {
                         if (mAdvanceSeekBar) {
                             mProgress.setMax(mMediaPlayer.getDuration());
                             mProgress.setProgress(mMediaPlayer.getCurrentPosition());
-
-                            Log.e("playback", "set progress to " + mProgress.getProgress() + " of "
-                                    + mProgress.getMax());
                         }
 
                         startPolling();
