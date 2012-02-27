@@ -37,6 +37,7 @@ public class PlaybackDialog extends AlertDialog {
 
     private boolean mAdvanceSeekBar;
     private boolean mMediaPlayerReleased;
+    private boolean mMediaPlayerPrepared;
 
     public PlaybackDialog(Context context) {
         super(context);
@@ -44,6 +45,7 @@ public class PlaybackDialog extends AlertDialog {
         mAdvanceSeekBar = true;
 
         mMediaPlayer = new MediaPlayer();
+        mMediaPlayer.setOnPreparedListener(mOnPreparedListener);
         mMediaPlayer.setOnCompletionListener(mOnCompletionListener);
 
         mPoller = new MediaPoller();
@@ -110,7 +112,9 @@ public class PlaybackDialog extends AlertDialog {
                 case R.id.play:
                     final ImageButton button = (ImageButton) v;
 
-                    if (mMediaPlayer.isPlaying()) {
+                    if (!mMediaPlayerPrepared) {
+                        // The media player isn't ready yet, do nothing.
+                    } else if (mMediaPlayer.isPlaying()) {
                         button.setImageResource(android.R.drawable.ic_media_play);
                         mMediaPlayer.pause();
                         mPoller.stopPolling();
@@ -138,9 +142,18 @@ public class PlaybackDialog extends AlertDialog {
 
         @Override
         public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-            if (fromUser) {
+            if (!mMediaPlayerPrepared) {
+                // The media player isn't ready yet, do nothing.
+            } else if (fromUser) {
                 mMediaPlayer.seekTo(progress);
             }
+        }
+    };
+    
+    private final MediaPlayer.OnPreparedListener mOnPreparedListener = new MediaPlayer.OnPreparedListener() {
+        @Override
+        public void onPrepared(MediaPlayer mp) {
+            mMediaPlayerPrepared = true;
         }
     };
 

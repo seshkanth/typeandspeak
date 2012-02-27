@@ -7,6 +7,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.TreeSet;
@@ -66,6 +68,9 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
     private static final String PREF_LOCALE = "PREF_LOCALE";
     private static final String PREF_PITCH = "PREF_PITCH";
     private static final String PREF_SPEED = "PREF_SPEED";
+    private static final String PREF_STATE = "PREF_STATE";
+    private static final String PREF_START = "PREF_START";
+    private static final String PREF_STOP = "PREF_STOP";
 
     private static final int STREAM_TYPE = AudioManager.STREAM_MUSIC;
 
@@ -135,18 +140,12 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
 
         final Intent intent = getIntent();
 
-        if (savedInstanceState != null) {
-            restoreState(savedInstanceState, false);
-        } else if (Intent.ACTION_SEND.equals(intent.getAction())) {
+        if (Intent.ACTION_SEND.equals(intent.getAction())) {
             restoreState(intent.getExtras(), true);
+        } else {
+            mInputText.setText(prefs.getString(PREF_STATE, ""));
+            mInputText.setSelection(prefs.getInt(PREF_START, 0), prefs.getInt(PREF_STOP, 0));
         }
-    }
-
-    @Override
-    protected void onSaveInstanceState(Bundle outState) {
-        final String text = mInputText.getText().toString();
-
-        outState.putString(Intent.EXTRA_TEXT, text);
     }
 
     @Override
@@ -155,6 +154,9 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
         final Editor editor = prefs.edit();
         editor.putInt(PREF_PITCH, mPitch);
         editor.putInt(PREF_SPEED, mSpeed);
+        editor.putInt(PREF_START, mInputText.getSelectionStart());
+        editor.putInt(PREF_STOP, mInputText.getSelectionEnd());
+        editor.putString(PREF_STATE, mInputText.getText().toString());
         editor.commit();
 
         super.onPause();
@@ -415,6 +417,8 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
     }
 
     private void onTtsCheck(int resultCode, Intent data) {
+        Log.e(TAG, "TTS check returned code " + resultCode);
+
         // If data is null, always prompt the user to install voice data.
         if (data == null) {
             mSpeakButton.setEnabled(false);
@@ -426,7 +430,7 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
         mSpeakButton.setEnabled(true);
         mWriteButton.setEnabled(true);
 
-        final boolean passed = (resultCode != TextToSpeech.Engine.CHECK_VOICE_DATA_PASS);
+        final boolean passed = (resultCode == TextToSpeech.Engine.CHECK_VOICE_DATA_PASS);
         final Set<Locale> locales = loadTtsLanguages(data);
 
         if (!locales.isEmpty() || passed) {
@@ -480,16 +484,20 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
 
     private Set<Locale> loadTtsLanguages(Intent data) {
         if (data == null) {
+            Log.e(TAG, "data returned as null");
             return Collections.emptySet();
         }
 
         final Bundle extras = data.getExtras();
 
-        Object langs = extras.get(Engine.EXTRA_VOICE_DATA_FILES_INFO);
+        Object langs = null;
 
-        // If this is a newer engine, it may be using a different key.
         if (langs == null) {
-            langs = extras.get(EXTRA_AVAILABLE_VOICES);
+            langs = getAvailableVoicesICS(extras);
+        }
+
+        if (langs == null) {
+            langs = getAvailableVoices(extras);
         }
 
         // Some engines return a String[], which is not an Iterable<?>
@@ -499,6 +507,7 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
 
         // If it's not iterable, fail.
         if (!(langs instanceof Iterable<?>)) {
+            Log.e(TAG, "data not iterable");
             return Collections.emptySet();
         }
 
@@ -506,6 +515,10 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
         final TreeSet<Locale> locales = new TreeSet<Locale>(mLocaleComparator);
 
         for (final Object strLocale : strLocales) {
+            if (strLocale == null) {
+                continue;
+            }
+
             final String[] codes = strLocale.toString().split("-");
 
             if (codes.length == 1) {
@@ -518,6 +531,34 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
         }
 
         return locales;
+    }
+
+    private Object getAvailableVoices(final Bundle extras) {
+        final String root = extras.getString(Engine.EXTRA_VOICE_DATA_ROOT_DIRECTORY);
+        final Object files = extras.get(Engine.EXTRA_VOICE_DATA_FILES);
+        final Object langs = extras.get(Engine.EXTRA_VOICE_DATA_FILES_INFO);
+
+        if ((root == null) || !(files instanceof String[]) || !(langs instanceof String[])) {
+            return langs;
+        }
+
+        final String[] filesArray = (String[]) files;
+        final String[] langsArray = (String[]) langs;
+        final List<String> langsList = new LinkedList<String>();
+
+        for (int i = 0; i < filesArray.length; i++) {
+            final File file = new File(root, filesArray[i]);
+
+            if (file.canRead()) {
+                langsList.add(langsArray[i]);
+            }
+        }
+
+        return langsList;
+    }
+
+    private Object getAvailableVoicesICS(final Bundle extras) {
+        return extras.get(EXTRA_AVAILABLE_VOICES);
     }
 
     private void onTtsInitialized(int status) {

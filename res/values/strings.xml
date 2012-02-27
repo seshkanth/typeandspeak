@@ -12,7 +12,7 @@
     <string name="album_name">Saved Speech</string>
     <string name="speaking">Speaking…</string>
     <string name="install_data_title">Install Language data?</string>
-    <string name="install_data_message">Type and Speak requires speech synthesis data.\n\nClick OK to download synthesis data for your text-to-speech engine.</string>
+    <string name="install_data_message">Type and Speak requires speech synthesis data.\n\nPlease check your SD card (if applicable) and click OK to download synthesis data for your text-to-speech engine.</string>
     <string name="save_file_title">Save as WAV</string>
     <string name="save_file_message">Under what name would you like to save this speech?</string>
     <string name="no_write_title">Error</string>
