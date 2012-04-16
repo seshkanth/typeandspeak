@@ -5,6 +5,7 @@
     <string name="pitch">Pitch</string>
     <string name="speed">Speed</string>
     <string name="speak">Speak</string>
+    <string name="stop_speaking">Stop speech</string>
     <string name="spoken_clear">Clear</string>
     <string name="spoken_write">Save</string>
     <string name="spoken_prefs">Properties</string>
@@ -29,5 +30,6 @@
     <string name="properties_title">Speech Properties</string>
     <string name="library">Library</string>
     <string name="flag">Flag</string>
+    <string name="input_hint">File name</string>
 
 </resources>
