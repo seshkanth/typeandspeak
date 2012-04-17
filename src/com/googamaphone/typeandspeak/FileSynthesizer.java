@@ -9,6 +9,7 @@ import android.app.AlertDialog;
 import android.app.AlertDialog.Builder;
 import android.app.Dialog;
 import android.app.ProgressDialog;
+import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -115,11 +116,13 @@ public class FileSynthesizer {
      * @param contentValues The media descriptor values.
      */
     private void onWriteCompleted() {
+        final ContentResolver resolver = mContext.getContentResolver();
         final String path = mContentValues.getAsString(MediaColumns.DATA);
         final Uri uriForPath = Media.getContentUriForPath(path);
-        final Uri contentUri = mContext.getContentResolver().insert(uriForPath, mContentValues);
+        
+        resolver.insert(uriForPath, mContentValues);
 
-        // Clears last queue element to avoid deletion on exit...
+        // Clears last queue element to avoid deletion on exit.
         mTts.speak("", TextToSpeech.QUEUE_FLUSH, null);
 
         try {
@@ -131,7 +134,7 @@ public class FileSynthesizer {
         }
 
         if (mListener != null) {
-            mListener.onFileSynthesized(mContentValues, contentUri);
+            mListener.onFileSynthesized(mContentValues);
         }
         
         mContentValues.clear();
@@ -162,6 +165,8 @@ public class FileSynthesizer {
         } catch (final RuntimeException e) {
             e.printStackTrace();
         }
+        
+        mContentValues.clear();
     }
 
     private void writeInput(String text, Locale locale, int pitch, int rate, String filename) {
@@ -201,6 +206,7 @@ public class FileSynthesizer {
             }
 
             // Populate content values for the media provider.
+            mContentValues.clear();
             mContentValues.put(MediaColumns.DISPLAY_NAME, filename);
             mContentValues.put(MediaColumns.TITLE, filename);
             mContentValues.put(AudioColumns.ARTIST, mArtistValue);
@@ -263,6 +269,6 @@ public class FileSynthesizer {
     };
     
     public interface FileSynthesizerListener {
-        public void onFileSynthesized(ContentValues contentValues, Uri contentUri);
+        public void onFileSynthesized(ContentValues contentValues);
     }
 }

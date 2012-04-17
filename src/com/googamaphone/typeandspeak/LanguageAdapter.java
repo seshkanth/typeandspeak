@@ -10,6 +10,10 @@ import android.widget.TextView;
 
 import java.util.Locale;
 
+/**
+ * An implementation of {@link ArrayAdapter} that displays locales with their
+ * proper display names and flags.
+ */
 public class LanguageAdapter extends ArrayAdapter<Locale> {
     private final int mTextId;
     private final int mImageId;
@@ -39,6 +43,12 @@ public class LanguageAdapter extends ArrayAdapter<Locale> {
         return view;
     }
 
+    /**
+     * Sets the flag for the specified view and locale.
+     * 
+     * @param position The position of the locale within the adapter.
+     * @param view The view that represents the locale.
+     */
     private void setFlagDrawable(int position, View view) {
         final Locale locale = getItem(position);
         final int drawableId = getFlagForLocale(locale);
@@ -50,6 +60,14 @@ public class LanguageAdapter extends ArrayAdapter<Locale> {
         imageView.setImageResource(drawableId);
     }
 
+    /**
+     * Returns the drawable identifier for the flag associated specified locale.
+     * If the locale does not have a flag, returns the drawable identifier for
+     * the default flag.
+     * 
+     * @param locale A locale.
+     * @return The drawable identifier for the locale's flag.
+     */
     private static int getFlagForLocale(Locale locale) {
         final String language = locale.getISO3Language();
         final String country = locale.getISO3Country();

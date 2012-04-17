@@ -16,6 +16,11 @@ import android.speech.tts.TextToSpeech.Engine;
 import android.util.Log;
 
 public class TextToSpeechUtils {
+    private static final String TAG = TextToSpeechUtils.class.getSimpleName();
+    
+    /** Extra used to enumerate available voices in API 14+ */
+    private static final String EXTRA_AVAILABLE_VOICES = "availableVoices";
+    
     private static final Comparator<Locale> LOCALE_COMPARATOR = new Comparator<Locale>() {
         @Override
         public int compare(Locale lhs, Locale rhs) {
@@ -23,9 +28,9 @@ public class TextToSpeechUtils {
         }
     };
     
-    static Set<Locale> loadTtsLanguages(Intent data) {
+    public static Set<Locale> loadTtsLanguages(Intent data) {
         if (data == null) {
-            Log.e(TypeAndSpeak.TAG, "data returned as null");
+            Log.e(TAG, "data returned as null");
             return Collections.emptySet();
         }
 
@@ -48,7 +53,7 @@ public class TextToSpeechUtils {
 
         // If it's not iterable, fail.
         if (!(langs instanceof Iterable<?>)) {
-            Log.e(TypeAndSpeak.TAG, "data not iterable");
+            Log.e(TAG, "data not iterable");
             return Collections.emptySet();
         }
 
@@ -99,6 +104,6 @@ public class TextToSpeechUtils {
     }
 
     private static Object getAvailableVoicesICS(final Bundle extras) {
-        return extras.get(TypeAndSpeak.EXTRA_AVAILABLE_VOICES);
+        return extras.get(EXTRA_AVAILABLE_VOICES);
     }
 }

@@ -9,7 +9,6 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.media.MediaPlayer;
-import android.net.Uri;
 import android.os.Handler;
 import android.os.Message;
 import android.provider.MediaStore.MediaColumns;
@@ -28,12 +27,6 @@ public class PlaybackDialog extends AlertDialog {
     private final ImageButton mPlayButton;
 
     private File mSavedFile;
-
-    @SuppressWarnings("unused")
-    private ContentValues mContentValues;
-
-    @SuppressWarnings("unused")
-    private Uri mContentUri;
 
     private boolean mAdvanceSeekBar;
     private boolean mMediaPlayerReleased;
@@ -85,14 +78,9 @@ public class PlaybackDialog extends AlertDialog {
         message.setText(getContext().getString(R.string.saved_message, path));
 
         mSavedFile = new File(path);
-        mContentValues = contentValues;
 
         mMediaPlayer.setDataSource(mSavedFile.getAbsolutePath());
         mMediaPlayer.prepare();
-    }
-
-    public void setUri(Uri contentUri) {
-        mContentUri = contentUri;
     }
 
     private final MediaPlayer.OnCompletionListener mOnCompletionListener = new MediaPlayer.OnCompletionListener() {
