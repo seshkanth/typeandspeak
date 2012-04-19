@@ -71,23 +71,52 @@ public class LanguageAdapter extends ArrayAdapter<Locale> {
     private static int getFlagForLocale(Locale locale) {
         final String language = locale.getISO3Language();
         final String country = locale.getISO3Country();
-
-        if ("eng".equalsIgnoreCase(language)) {
-            if ("usa".equalsIgnoreCase(country)) {
-                return R.drawable.en_us;
-            } else {
-                return R.drawable.en_uk;
-            }
-        } else if ("deu".equalsIgnoreCase(language)) {
-            return R.drawable.deu;
-        } else if ("spa".equalsIgnoreCase(language)) {
-            return R.drawable.spa;
-        } else if ("fra".equalsIgnoreCase(language)) {
-            return R.drawable.fra;
-        } else if ("ita".equalsIgnoreCase(language)) {
-            return R.drawable.ita;
-        } else {
-            return R.drawable.unknown;
+        
+        // First, check for country code.
+        if ("usa".equals(country)) {
+            return R.drawable.united_states;
+        } else if ("ita".equals(country)) {
+            return R.drawable.italy;
+        } else if ("deu".equals(country)) {
+            return R.drawable.germany;
+        } else if ("gbr".equals(country)) {
+            return R.drawable.united_kingdom;
+        } else if ("fra".equals(country)) {
+            return R.drawable.france;
+        } else if ("chn".equals(country)) {
+            return R.drawable.china;
+        } else if ("twn".equals(country)) {
+            return R.drawable.taiwan;
+        } else if ("jpn".equals(country)) {
+            return R.drawable.japan;
+        } else if ("spa".equals(country)) {
+            return R.drawable.spain;
+        } else if ("mex".equals(country)) {
+            return R.drawable.mexico;
+        } else if ("kor".equals(country)) {
+            return R.drawable.korea;
         }
+        
+        // Next, check for language code.
+
+        if (Locale.ENGLISH.getISO3Language().equalsIgnoreCase(language)) {
+            return R.drawable.united_kingdom;
+        } else if (Locale.GERMAN.getISO3Language().equalsIgnoreCase(language)) {
+            return R.drawable.germany;
+        } else if (Locale.FRENCH.getISO3Language().equalsIgnoreCase(language)) {
+            return R.drawable.france;
+        } else if (Locale.ITALIAN.getISO3Language().equalsIgnoreCase(language)) {
+            return R.drawable.italy;
+        } else if (Locale.CHINESE.getISO3Language().equalsIgnoreCase(language)) {
+            return R.drawable.china;
+        } else if (Locale.JAPANESE.getISO3Language().equalsIgnoreCase(language)) {
+            return R.drawable.japan;
+        } else if (Locale.KOREAN.getISO3Language().equalsIgnoreCase(language)) {
+            return R.drawable.korea;
+        } else if ("spa".equalsIgnoreCase(language)) {
+            return R.drawable.spain;
+        }
+
+        return R.drawable.unknown;
     }
 }

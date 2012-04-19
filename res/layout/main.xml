@@ -35,24 +35,27 @@
         android:layout_height="wrap_content"
         android:background="@drawable/bottom_bar"
         android:orientation="horizontal"
-        android:paddingTop="5dp" >
+        android:padding="2dp" >
 
         <ImageButton
             android:id="@+id/clear"
             style="@style/dark_button"
             android:layout_width="48dp"
             android:layout_height="48dp"
+            android:layout_margin="2dp"
             android:contentDescription="@string/spoken_clear"
             android:scaleType="fitCenter"
             android:src="@android:drawable/ic_menu_delete" />
 
         <Button
             android:id="@+id/speak"
-            style="@style/blue_button"
             android:layout_width="0dp"
             android:layout_height="fill_parent"
+            android:layout_margin="2dp"
             android:layout_weight="1.0"
+            android:background="@drawable/btn_blue"
             android:text="@string/speak"
+            android:textColor="@android:color/white"
             android:textSize="20sp" />
 
         <ImageButton
@@ -60,6 +63,7 @@
             style="@style/dark_button"
             android:layout_width="48dp"
             android:layout_height="48dp"
+            android:layout_margin="2dp"
             android:contentDescription="@string/spoken_prefs"
             android:scaleType="fitCenter"
             android:src="@android:drawable/ic_menu_preferences" />
@@ -69,6 +73,7 @@
             style="@style/dark_button"
             android:layout_width="48dp"
             android:layout_height="48dp"
+            android:layout_margin="2dp"
             android:contentDescription="@string/spoken_write"
             android:scaleType="fitCenter"
             android:src="@android:drawable/ic_menu_save" />

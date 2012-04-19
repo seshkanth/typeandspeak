@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="button_stroke">#80000000</color>
+    <color name="button_blue_normal_top">#7896C0</color>
+    <color name="button_blue_normal_bottom">#284670</color>
+    <color name="button_dark_normal_top">#929292</color>
+    <color name="button_dark_normal_bottom">#424242</color>
+    <color name="button_dark_disable_top">#b3b3b3</color>
+    <color name="button_dark_disable_bottom">#565656</color>
+    <color name="button_dark_pressed_top">#e1b243</color>
+    <color name="button_dark_pressed_bottom">#725512</color>
+    <color name="button_dark_focused_top">#e17b43</color>
+    <color name="button_dark_focused_bottom">#723412</color>
+</resources>
