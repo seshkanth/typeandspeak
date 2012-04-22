@@ -33,6 +33,7 @@ import android.speech.tts.TextToSpeech;
 import android.speech.tts.TextToSpeech.Engine;
 import android.text.Spannable;
 import android.text.Spanned;
+import android.text.TextUtils;
 import android.text.method.KeyListener;
 import android.text.style.BackgroundColorSpan;
 import android.text.style.CharacterStyle;
@@ -345,7 +346,13 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
         if (fromIntent && (text.startsWith("http://") || text.startsWith("https://"))) {
             // TODO: Extract full URL from RSS items.
             try {
-                text = ArticleExtractor.getInstance().getText(new URL(text));
+                final String extracted = ArticleExtractor.getInstance().getText(new URL(text));
+                
+                if (TextUtils.isEmpty(extracted)) {
+                    text = getString(R.string.failed_extraction, text);
+                } else {
+                    text = extracted;
+                }
             } catch (final MalformedURLException e) {
                 e.printStackTrace();
             } catch (final BoilerpipeProcessingException e) {

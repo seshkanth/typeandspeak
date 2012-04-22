@@ -34,5 +34,6 @@
     <string name="rewind">Previous</string>
     <string name="fast_forward">Next</string>
     <string name="resume">Resume</string>
+    <string name="failed_extraction">Failed to extract content from %s</string>
 
 </resources>
