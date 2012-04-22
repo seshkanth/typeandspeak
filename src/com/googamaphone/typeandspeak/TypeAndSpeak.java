@@ -111,6 +111,7 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
 
     // Speech properties.
     private Locale mLocale;
+    private int mLocalePosition;
     private int mPitch;
     private int mSpeed;
 
@@ -250,7 +251,7 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.menu_library: {
-                startAlbumActivity();
+                startAlbumActivity(this);
                 return true;
             }
         }
@@ -308,9 +309,9 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
     /**
      * Displays the activity for viewing the Type and Speak album.
      */
-    private void startAlbumActivity() {
-        final String album = getString(R.string.album_name);
-        final ContentResolver resolver = getContentResolver();
+    public static void startAlbumActivity(Context context) {
+        final String album = context.getString(R.string.album_name);
+        final ContentResolver resolver = context.getContentResolver();
         final String[] projection = new String[] {
                 BaseColumns._ID, AlbumColumns.ALBUM
         };
@@ -326,7 +327,7 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
             final Intent intent = new Intent(Intent.ACTION_PICK);
             intent.setDataAndType(Uri.EMPTY, "vnd.android.cursor.dir/track");
             intent.putExtra("album", albumId);
-            startActivity(intent);
+            context.startActivity(intent);
         }
     }
 
@@ -347,9 +348,9 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
             // TODO: Extract full URL from RSS items.
             try {
                 final String extracted = ArticleExtractor.getInstance().getText(new URL(text));
-                
+
                 if (TextUtils.isEmpty(extracted)) {
-                    text = getString(R.string.failed_extraction, text);
+                    text = getString(R.string.failed_extraction, text, text);
                 } else {
                     text = extracted;
                 }
@@ -436,8 +437,6 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
      * @param locales The locales to populate.
      */
     private void populateAdapter(Set<Locale> locales) {
-        final String preferredLocale = mLocale.toString();
-
         final LanguageAdapter languageAdapter = new LanguageAdapter(this, R.layout.language,
                 R.id.text, R.id.image);
         languageAdapter.setDropDownViewResource(R.layout.language_dropdown);
@@ -450,7 +449,7 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
         for (final Locale locale : locales) {
             languageAdapter.add(locale);
 
-            if (locale.toString().equals(preferredLocale)) {
+            if (locale.equals(mLocale)) {
                 preferredSelection = (languageAdapter.getCount() - 1);
             }
         }
@@ -461,6 +460,7 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
         if (languageAdapter.getCount() <= 0) {
             languagePanel.setVisibility(View.GONE);
         } else {
+            languageAdapter.add(LanguageAdapter.LOCALE_ADD_MORE);
             languagePanel.setVisibility(View.VISIBLE);
         }
 
@@ -567,7 +567,24 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
         public void onItemSelected(AdapterView<?> view, View parent, int position, long id) {
             switch (view.getId()) {
                 case R.id.language_spinner:
-                    mLocale = (Locale) mLanguageSpinner.getSelectedItem();
+                    final Locale selected = (Locale) mLanguageSpinner.getSelectedItem();
+
+                    if (LanguageAdapter.LOCALE_ADD_MORE.equals(mLocale)) {
+                        mLanguageSpinner.setSelection(mLocalePosition);
+
+                        final Intent intent = new Intent(Intent.ACTION_VIEW);
+                        intent.setData(Uri.parse("market://search?q=tts&c=apps"));
+                        intent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY
+                                | Intent.FLAG_ACTIVITY_CLEAR_WHEN_TASK_RESET);
+
+                        startActivity(intent);
+                        
+                        return;
+                    }
+                    
+                    mLocale = selected;
+                    mLocalePosition = position;
+
                     break;
             }
         }

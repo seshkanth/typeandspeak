@@ -8,7 +8,9 @@ import android.app.AlertDialog;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.media.MediaPlayer;
+import android.net.Uri;
 import android.os.Handler;
 import android.os.Message;
 import android.provider.MediaStore.MediaColumns;
@@ -25,6 +27,7 @@ public class PlaybackDialog extends AlertDialog {
     private final View mContentView;
     private final SeekBar mProgress;
     private final ImageButton mPlayButton;
+    private final ImageButton mShareButton;
 
     private File mSavedFile;
 
@@ -48,6 +51,9 @@ public class PlaybackDialog extends AlertDialog {
 
         mPlayButton = (ImageButton) mContentView.findViewById(R.id.play);
         mPlayButton.setOnClickListener(mViewClickListener);
+        
+        mShareButton = (ImageButton) mContentView.findViewById(R.id.share);
+        mShareButton.setOnClickListener(mViewClickListener);
 
         mProgress = (SeekBar) mContentView.findViewById(R.id.progress);
         mProgress.setOnSeekBarChangeListener(mOnSeekBarChangeListener);
@@ -55,6 +61,8 @@ public class PlaybackDialog extends AlertDialog {
 
         setTitle(R.string.saved_title);
         setButton(DialogInterface.BUTTON_POSITIVE, context.getString(android.R.string.ok),
+                mDialogClickListener);
+        setButton(DialogInterface.BUTTON_NEGATIVE, context.getString(R.string.library),
                 mDialogClickListener);
         setView(mContentView);
     }
@@ -97,7 +105,7 @@ public class PlaybackDialog extends AlertDialog {
         @Override
         public void onClick(View v) {
             switch (v.getId()) {
-                case R.id.play:
+                case R.id.play: {
                     final ImageButton button = (ImageButton) v;
 
                     if (!mMediaPlayerPrepared) {
@@ -113,6 +121,18 @@ public class PlaybackDialog extends AlertDialog {
                     }
 
                     break;
+                }
+                case R.id.share: {
+                    final Intent shareIntent = new Intent();
+                    shareIntent.setAction(Intent.ACTION_SEND);
+                    shareIntent.putExtra(Intent.EXTRA_STREAM, Uri.fromFile(mSavedFile));
+                    shareIntent.setType("audio/wav");
+
+                    final Context context = getContext();
+                    final Intent chooserIntent = Intent.createChooser(shareIntent, context.getString(R.string.share_to));
+                    
+                    context.startActivity(chooserIntent);
+                }
             }
         }
     };
@@ -149,12 +169,10 @@ public class PlaybackDialog extends AlertDialog {
         @Override
         public void onClick(DialogInterface dialog, int which) {
             switch (which) {
-                case DialogInterface.BUTTON_POSITIVE:
-                    dismiss();
+                case DialogInterface.BUTTON_NEGATIVE:
+                    TypeAndSpeak.startAlbumActivity(getContext());
                     break;
             }
-
-            dialog.dismiss();
         }
     };
 

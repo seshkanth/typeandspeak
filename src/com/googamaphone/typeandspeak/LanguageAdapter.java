@@ -15,6 +15,8 @@ import android.widget.TextView;
  * proper display names and flags.
  */
 public class LanguageAdapter extends ArrayAdapter<Locale> {
+    public static final Locale LOCALE_ADD_MORE = new Locale("addmore");
+    
     private final int mTextId;
     private final int mImageId;
 
@@ -54,10 +56,19 @@ public class LanguageAdapter extends ArrayAdapter<Locale> {
         final int drawableId = getFlagForLocale(locale);
 
         final TextView textView = (TextView) view.findViewById(mTextId);
-        textView.setText(locale.getDisplayName());
+        final CharSequence displayName = getDisplayNameForLocale(getContext(), locale);
+        textView.setText(displayName);
 
         final ImageView imageView = (ImageView) view.findViewById(mImageId);
         imageView.setImageResource(drawableId);
+    }
+    
+    private static CharSequence getDisplayNameForLocale(Context context, Locale locale) {
+        if (LOCALE_ADD_MORE.equals(locale)) {
+            return context.getString(R.string.add_more);
+        }
+        
+        return locale.getDisplayName();
     }
 
     /**
@@ -69,36 +80,39 @@ public class LanguageAdapter extends ArrayAdapter<Locale> {
      * @return The drawable identifier for the locale's flag.
      */
     private static int getFlagForLocale(Locale locale) {
+        if (LOCALE_ADD_MORE.equals(locale)) {
+            return R.drawable.add_more;
+        }
+        
         final String language = locale.getISO3Language();
         final String country = locale.getISO3Country();
 
         // First, check for country code.
-        if ("usa".equals(country)) {
+        if ("usa".equalsIgnoreCase(country)) {
             return R.drawable.united_states;
-        } else if ("ita".equals(country)) {
+        } else if ("ita".equalsIgnoreCase(country)) {
             return R.drawable.italy;
-        } else if ("deu".equals(country)) {
+        } else if ("deu".equalsIgnoreCase(country)) {
             return R.drawable.germany;
-        } else if ("gbr".equals(country)) {
+        } else if ("gbr".equalsIgnoreCase(country)) {
             return R.drawable.united_kingdom;
-        } else if ("fra".equals(country)) {
+        } else if ("fra".equalsIgnoreCase(country)) {
             return R.drawable.france;
-        } else if ("chn".equals(country)) {
+        } else if ("chn".equalsIgnoreCase(country)) {
             return R.drawable.china;
-        } else if ("twn".equals(country)) {
+        } else if ("twn".equalsIgnoreCase(country)) {
             return R.drawable.taiwan;
-        } else if ("jpn".equals(country)) {
+        } else if ("jpn".equalsIgnoreCase(country)) {
             return R.drawable.japan;
-        } else if ("spa".equals(country)) {
+        } else if ("spa".equalsIgnoreCase(country)) {
             return R.drawable.spain;
-        } else if ("mex".equals(country)) {
+        } else if ("mex".equalsIgnoreCase(country)) {
             return R.drawable.mexico;
-        } else if ("kor".equals(country)) {
+        } else if ("kor".equalsIgnoreCase(country)) {
             return R.drawable.korea;
         }
 
         // Next, check for language code.
-
         if (Locale.ENGLISH.getISO3Language().equalsIgnoreCase(language)) {
             return R.drawable.united_kingdom;
         } else if (Locale.GERMAN.getISO3Language().equalsIgnoreCase(language)) {
