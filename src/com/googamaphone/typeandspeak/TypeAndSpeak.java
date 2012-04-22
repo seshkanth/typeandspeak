@@ -66,6 +66,7 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
     private static final int STREAM_TYPE = AudioManager.STREAM_MUSIC;
 
     // Preference keys.
+    private static final String PREF_TEXT = "PREF_TEXT";
     private static final String PREF_LOCALE = "PREF_LOCALE";
     private static final String PREF_PITCH = "PREF_PITCH";
     private static final String PREF_SPEED = "PREF_SPEED";
@@ -137,6 +138,9 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
         mParams.put(Engine.KEY_PARAM_UTTERANCE_ID, TAG);
         mTtsEngine = Settings.Secure.getString(resolver, Settings.Secure.TTS_DEFAULT_SYNTH);
         mTts = new TextToSpeech(this, initListener);
+        
+        final SharedPreferences prefs = getPreferences(MODE_PRIVATE);
+        mInputText.setText(prefs.getString(PREF_TEXT, ""));
 
         // Load text from intent.
         onNewIntent(getIntent());
@@ -175,6 +179,7 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
         editor.putInt(PREF_PITCH, mPitch);
         editor.putInt(PREF_SPEED, mSpeed);
         editor.putString(PREF_LOCALE, mLocale.toString());
+        editor.putString(PREF_TEXT, mInputText.getText().toString());
         editor.commit();
     }
 
@@ -442,6 +447,7 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
         languageAdapter.setDropDownViewResource(R.layout.language_dropdown);
         languageAdapter.clear();
 
+        final String preferredLocale = mLocale.toString();
         int preferredSelection = 0;
 
         // Add the available locales to the adapter, watching for the preferred
@@ -449,7 +455,7 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
         for (final Locale locale : locales) {
             languageAdapter.add(locale);
 
-            if (locale.equals(mLocale)) {
+            if (locale.toString().equalsIgnoreCase(preferredLocale)) {
                 preferredSelection = (languageAdapter.getCount() - 1);
             }
         }
