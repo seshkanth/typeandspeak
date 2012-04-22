@@ -19,7 +19,7 @@
                 android:bottom="10dp" />
         </shape>
     </item>
-    
+
     <!-- android:drawable="@drawable/btn_blue_normal" -->
     <item android:state_enabled="true">
         <shape>
@@ -39,7 +39,7 @@
                 android:bottom="10dp" />
         </shape>
     </item>
-    
+
     <!-- android:drawable="@drawable/btn_dark_pressed" -->
     <item android:state_enabled="true" android:state_pressed="true">
         <shape>
@@ -59,7 +59,7 @@
                 android:bottom="10dp" />
         </shape>
     </item>
-    
+
     <!-- android:drawable="@drawable/btn_dark_selected" -->
     <item android:state_enabled="true" android:state_focused="true">
         <shape>

@@ -1,14 +1,14 @@
 
 package com.googamaphone.typeandspeak;
 
+import java.util.Locale;
+
 import android.content.Context;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
-
-import java.util.Locale;
 
 /**
  * An implementation of {@link ArrayAdapter} that displays locales with their
@@ -45,7 +45,7 @@ public class LanguageAdapter extends ArrayAdapter<Locale> {
 
     /**
      * Sets the flag for the specified view and locale.
-     * 
+     *
      * @param position The position of the locale within the adapter.
      * @param view The view that represents the locale.
      */
@@ -64,14 +64,14 @@ public class LanguageAdapter extends ArrayAdapter<Locale> {
      * Returns the drawable identifier for the flag associated specified locale.
      * If the locale does not have a flag, returns the drawable identifier for
      * the default flag.
-     * 
+     *
      * @param locale A locale.
      * @return The drawable identifier for the locale's flag.
      */
     private static int getFlagForLocale(Locale locale) {
         final String language = locale.getISO3Language();
         final String country = locale.getISO3Country();
-        
+
         // First, check for country code.
         if ("usa".equals(country)) {
             return R.drawable.united_states;
@@ -96,7 +96,7 @@ public class LanguageAdapter extends ArrayAdapter<Locale> {
         } else if ("kor".equals(country)) {
             return R.drawable.korea;
         }
-        
+
         // Next, check for language code.
 
         if (Locale.ENGLISH.getISO3Language().equalsIgnoreCase(language)) {

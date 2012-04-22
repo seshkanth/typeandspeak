@@ -1,3 +1,4 @@
+
 package com.googamaphone.typeandspeak;
 
 import java.io.File;
@@ -17,17 +18,17 @@ import android.util.Log;
 
 public class TextToSpeechUtils {
     private static final String TAG = TextToSpeechUtils.class.getSimpleName();
-    
+
     /** Extra used to enumerate available voices in API 14+ */
     private static final String EXTRA_AVAILABLE_VOICES = "availableVoices";
-    
+
     private static final Comparator<Locale> LOCALE_COMPARATOR = new Comparator<Locale>() {
         @Override
         public int compare(Locale lhs, Locale rhs) {
             return lhs.getDisplayName().compareTo(rhs.getDisplayName());
         }
     };
-    
+
     public static Set<Locale> loadTtsLanguages(Intent data) {
         if (data == null) {
             Log.e(TAG, "data returned as null");

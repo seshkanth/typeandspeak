@@ -137,7 +137,7 @@ public class PlaybackDialog extends AlertDialog {
             }
         }
     };
-    
+
     private final MediaPlayer.OnPreparedListener mOnPreparedListener = new MediaPlayer.OnPreparedListener() {
         @Override
         public void onPrepared(MediaPlayer mp) {

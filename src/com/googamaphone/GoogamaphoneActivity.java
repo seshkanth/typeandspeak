@@ -37,26 +37,26 @@ public class GoogamaphoneActivity extends Activity {
     protected void contactDeveloper() {
         String appVersion = "unknown";
         String appPackage = "unknown";
-        String phoneModel = android.os.Build.MODEL;
-        String osVersion = android.os.Build.VERSION.RELEASE;
+        final String phoneModel = android.os.Build.MODEL;
+        final String osVersion = android.os.Build.VERSION.RELEASE;
 
         try {
-            PackageManager pm = getPackageManager();
-            PackageInfo pi = pm.getPackageInfo(getPackageName(), 0);
+            final PackageManager pm = getPackageManager();
+            final PackageInfo pi = pm.getPackageInfo(getPackageName(), 0);
             appVersion = pi.versionName;
             appPackage = pi.packageName;
-        } catch (NameNotFoundException e) {
+        } catch (final NameNotFoundException e) {
             e.printStackTrace();
         }
 
-        String appName = getString(R.string.app_name);
-        String contactDev = getString(R.string.contact_dev);
-        String contactEmail = getString(R.string.contact_email);
-        String subject = getString(R.string.contact_subject, appName);
-        String body = getString(R.string.contact_body, appName, appPackage, appVersion, phoneModel,
-                osVersion);
+        final String appName = getString(R.string.app_name);
+        final String contactDev = getString(R.string.contact_dev);
+        final String contactEmail = getString(R.string.contact_email);
+        final String subject = getString(R.string.contact_subject, appName);
+        final String body = getString(R.string.contact_body, appName, appPackage, appVersion,
+                phoneModel, osVersion);
 
-        Intent sendIntent = new Intent(Intent.ACTION_SEND);
+        final Intent sendIntent = new Intent(Intent.ACTION_SEND);
         sendIntent.putExtra(Intent.EXTRA_EMAIL, new String[] {
             contactEmail
         });

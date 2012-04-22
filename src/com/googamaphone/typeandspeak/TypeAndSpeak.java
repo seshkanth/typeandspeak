@@ -19,6 +19,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.database.Cursor;
+import android.graphics.Color;
 import android.media.AudioManager;
 import android.net.Uri;
 import android.os.Bundle;
@@ -30,10 +31,17 @@ import android.provider.MediaStore.Audio.AlbumColumns;
 import android.provider.Settings;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.TextToSpeech.Engine;
+import android.text.Spannable;
+import android.text.Spanned;
+import android.text.method.KeyListener;
+import android.text.style.BackgroundColorSpan;
+import android.text.style.CharacterStyle;
+import android.text.style.ForegroundColorSpan;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemSelectedListener;
 import android.widget.Button;
@@ -69,6 +77,10 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
     private static final int REQUEST_CHECK_DATA = 1;
     private static final int REQUEST_INSTALL_DATA = 2;
 
+    // Sing-along colors.
+    private static final CharacterStyle FOREGROUND_SPAN = new ForegroundColorSpan(Color.BLACK);
+    private static final CharacterStyle BACKGROUND_SPAN = new BackgroundColorSpan(Color.YELLOW);
+
     /** Speech parameters. */
     private final HashMap<String, String> mParams = new HashMap<String, String>();
 
@@ -89,6 +101,9 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
 
     // Interface components.
     private Button mSpeakButton;
+    private ViewGroup mSpeakControls;
+    private ImageButton mPauseButton;
+    private ImageButton mResumeButton;
     private ImageButton mWriteButton;
     private EditText mInputText;
     private Spinner mLanguageSpinner;
@@ -260,6 +275,22 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
     private void setupUserInterface() {
         mSpeakButton = (Button) findViewById(R.id.speak);
         mSpeakButton.setOnClickListener(mOnClickListener);
+        mSpeakButton.setVisibility(View.VISIBLE);
+
+        mSpeakControls = (ViewGroup) findViewById(R.id.play_controls);
+        mSpeakControls.setVisibility(View.GONE);
+
+        mSpeakControls.findViewById(R.id.stop).setOnClickListener(mOnClickListener);
+        mSpeakControls.findViewById(R.id.rewind).setOnClickListener(mOnClickListener);
+        mSpeakControls.findViewById(R.id.fast_forward).setOnClickListener(mOnClickListener);
+
+        mPauseButton = (ImageButton) mSpeakControls.findViewById(R.id.pause);
+        mPauseButton.setOnClickListener(mOnClickListener);
+        mPauseButton.setVisibility(View.VISIBLE);
+
+        mResumeButton = (ImageButton) mSpeakControls.findViewById(R.id.resume);
+        mResumeButton.setOnClickListener(mOnClickListener);
+        mResumeButton.setVisibility(View.GONE);
 
         mWriteButton = (ImageButton) findViewById(R.id.write);
         mWriteButton.setOnClickListener(mOnClickListener);
@@ -300,7 +331,7 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
 
     /**
      * Restores a previously saved state.
-     * 
+     *
      * @param savedInstanceState The previously saved state.
      * @boolean fromIntent Whether the state is coming from an intent.
      */
@@ -327,7 +358,7 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
 
     /**
      * Shows the media playback dialog for the given values.
-     * 
+     *
      * @param contentValues The content values for the media.
      * @param contentUri The URI for the media.
      */
@@ -347,35 +378,19 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
      */
     private void speak() {
         if (mSingAlongTts == null) {
-            mSingAlongTts = new SingAlongTextToSpeech(this, mTts, mInputText);
-            mSingAlongTts.setListener(new SingAlongListener() {
-                @Override
-                public void onSpeechStarted() {
-                    mSpeakButton.setText(R.string.stop_speaking);
-                }
-
-                @Override
-                public void onSpeechCompleted() {
-                    mSpeakButton.setText(R.string.speak);
-                }
-            });
+            mSingAlongTts = new SingAlongTextToSpeech(this, mTts);
+            mSingAlongTts.setListener(mSingAlongListener);
         }
 
-        if (mSingAlongTts.isSpeaking()) {
-            mSingAlongTts.stop();
-            return;
-        }
-
-        final TextToSpeech tts = mSingAlongTts.getTextToSpeech();
         final Locale locale = (Locale) mLanguageSpinner.getSelectedItem();
         if (locale != null) {
-            tts.setLanguage(locale);
+            mTts.setLanguage(locale);
         }
 
-        tts.setPitch(mPitch / 50.0f);
-        tts.setSpeechRate(mSpeed / 50.0f);
+        mTts.setPitch(mPitch / 50.0f);
+        mTts.setSpeechRate(mSpeed / 50.0f);
 
-        mSingAlongTts.speak();
+        mSingAlongTts.speak(mInputText.getText());
     }
 
     /**
@@ -410,7 +425,7 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
     /**
      * Populates the language adapter with the specified locales. Attempts to
      * set the current selection based on {@link #mLocale}.
-     * 
+     *
      * @param locales The locales to populate.
      */
     private void populateAdapter(Set<Locale> locales) {
@@ -449,7 +464,7 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
 
     /**
      * Handles the text-to-speech language check callback.
-     * 
+     *
      * @param resultCode The result code.
      * @param data The returned data.
      */
@@ -483,7 +498,7 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
 
     /**
      * Handles the text-to-speech initialization callback.
-     * 
+     *
      * @param status The initialization status.
      */
     private void onTtsInitialized(int status) {
@@ -575,7 +590,70 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
                 case R.id.write:
                     write();
                     break;
+                case R.id.stop:
+                    mSingAlongTts.stop();
+                    break;
+                case R.id.pause:
+                    mSingAlongTts.pause();
+                    mPauseButton.setVisibility(View.GONE);
+                    mResumeButton.setVisibility(View.VISIBLE);
+                    break;
+                case R.id.resume:
+                    mSingAlongTts.resume();
+                    mResumeButton.setVisibility(View.GONE);
+                    mPauseButton.setVisibility(View.VISIBLE);
+                    break;
+                case R.id.rewind:
+                    mSingAlongTts.previous();
+                    break;
+                case R.id.fast_forward:
+                    mSingAlongTts.next();
+                    break;
             }
+        }
+    };
+
+    private final SingAlongListener mSingAlongListener = new SingAlongListener() {
+        private KeyListener mKeyListener;
+
+        @Override
+        public void onUnitStarted(int id) {
+            mSpeakButton.setVisibility(View.GONE);
+            mSpeakControls.setVisibility(View.VISIBLE);
+            mPauseButton.setVisibility(View.VISIBLE);
+            mResumeButton.setVisibility(View.GONE);
+
+            mKeyListener = mInputText.getKeyListener();
+
+            mInputText.setKeyListener(null);
+            mInputText.setCursorVisible(false);
+            mInputText.setSelection(0, 0);
+        }
+
+        @Override
+        public void onSegmentStarted(int id, int start, int end) {
+            mInputText.setSelection(start, start);
+
+            final Spannable text = mInputText.getText();
+            text.setSpan(FOREGROUND_SPAN, start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+            text.setSpan(BACKGROUND_SPAN, start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        }
+
+        @Override
+        public void onUnitCompleted(int id) {
+            mInputText.setSelection(0, 0);
+            mInputText.setCursorVisible(true);
+            mInputText.setKeyListener(mKeyListener);
+            mInputText.setOnTouchListener(null);
+
+            final Spannable text = mInputText.getText();
+            text.removeSpan(FOREGROUND_SPAN);
+            text.removeSpan(BACKGROUND_SPAN);
+
+            mKeyListener = null;
+
+            mSpeakControls.setVisibility(View.GONE);
+            mSpeakButton.setVisibility(View.VISIBLE);
         }
     };
 

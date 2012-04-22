@@ -56,7 +56,16 @@
             android:background="@drawable/btn_blue"
             android:text="@string/speak"
             android:textColor="@android:color/white"
-            android:textSize="20sp" />
+            android:textSize="20sp"
+            android:visibility="gone" />
+
+        <include
+            android:id="@+id/play_controls"
+            android:layout_width="0dp"
+            android:layout_height="fill_parent"
+            android:layout_margin="2dp"
+            android:layout_weight="1.0"
+            layout="@layout/play_controls" />
 
         <ImageButton
             android:id="@+id/prefs"

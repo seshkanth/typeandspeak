@@ -1,6 +1,7 @@
 
 package com.googamaphone.typeandspeak;
 
+import java.text.BreakIterator;
 import java.util.HashMap;
 
 import android.content.Context;
@@ -9,73 +10,160 @@ import android.os.Message;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.TextToSpeech.Engine;
 import android.speech.tts.TextToSpeech.OnUtteranceCompletedListener;
-import android.widget.EditText;
 
 public class SingAlongTextToSpeech {
     private static final int UTTERANCE_COMPLETED = 1;
+    private static final int RESUME_SPEAKING = 2;
 
     private final TextToSpeech mTts;
-    private final SingAlongTextView mSingAlong;
     private final HashMap<String, String> mParams;
-    
-    private SingAlongListener mListener;
-    private boolean mIsSpeaking;
+    private final BreakIterator mBreakIterator;
 
-    public SingAlongTextToSpeech(Context context, TextToSpeech tts, EditText textView) {
-        mTts = tts;        
-        mSingAlong = new SingAlongTextView(textView);
+    private SingAlongListener mListener = null;
+    private CharSequence mCurrentUnit = null;
+    private int mCurrentId = 0;
+    private int mSegmentEnd = 0;
+    private int mSegmentStart = 0;
+    private boolean mIsPaused = false;
+
+    /**
+     * Flag that lets the utterance completion listener know whether to advance
+     * automatically. Automatically resets after each completed utterance.
+     */
+    private boolean mBypassAdvance = false;
+
+    public SingAlongTextToSpeech(Context context, TextToSpeech tts) {
+        mTts = tts;
+
         mParams = new HashMap<String, String>();
+        mParams.put(Engine.KEY_PARAM_UTTERANCE_ID, "SingAlongTTS");
+
+        mBreakIterator = BreakIterator.getSentenceInstance();
     }
-    
+
     public void setListener(SingAlongListener listener) {
         mListener = listener;
-    }
-    
-    public boolean isSpeaking() {
-        return mIsSpeaking;
     }
 
     public TextToSpeech getTextToSpeech() {
         return mTts;
     }
 
-    public void speak() {
-        mIsSpeaking = true;
-        mSingAlong.start();
-        onUtteranceCompleted(null);
-        
+    public void speak(CharSequence text) {
+        mIsPaused = true;
+
+        // TODO: Handle current speech completion.
+        mTts.stop();
+        mTts.setOnUtteranceCompletedListener(mOnUtteranceCompletedListener);
+
+        mCurrentId++;
+        mCurrentUnit = text;
+        mBreakIterator.setText(new CharSequenceIterator(mCurrentUnit));
+
         if (mListener != null) {
-            mListener.onSpeechStarted();
+            mListener.onUnitStarted(mCurrentId);
         }
+
+        mIsPaused = false;
+
+        onUtteranceCompleted(null);
     }
-    
+
+    public void pause() {
+        mIsPaused = true;
+        mTts.stop();
+    }
+
+    public void resume() {
+        mIsPaused = false;
+        speakCurrentSegment();
+    }
+
+    public void next() {
+        advanceBreakIterator(1);
+        mBypassAdvance = !mIsPaused;
+        mTts.stop();
+    }
+
+    public void previous() {
+        advanceBreakIterator(-1);
+        mBypassAdvance = !mIsPaused;
+        mTts.stop();
+    }
+
     public void stop() {
-        mIsSpeaking = false;
+        mIsPaused = true;
+
         mTts.stop();
         mTts.setOnUtteranceCompletedListener(null);
-        mSingAlong.end();
-        
+
         if (mListener != null) {
-            mListener.onSpeechCompleted();
+            mListener.onUnitCompleted(mCurrentId);
         }
+
+        mCurrentId = -1;
+        mCurrentUnit = null;
+        mSegmentStart = 0;
+        mSegmentEnd = 0;
+    }
+
+    private boolean advanceBreakIterator(int steps) {
+        while ((steps < 0) && (mSegmentStart > 0)) {
+            mSegmentEnd = mSegmentStart;
+            mBreakIterator.preceding(mSegmentEnd);
+            mSegmentStart = mBreakIterator.current();
+
+            steps++;
+        }
+
+        while ((steps > 0) && (mSegmentEnd < mCurrentUnit.length())) {
+            mSegmentStart = mSegmentEnd;
+            mBreakIterator.following(mSegmentStart);
+            mSegmentEnd = mBreakIterator.current();
+
+            steps--;
+        }
+
+        if (mListener != null) {
+            mListener.onSegmentStarted(mCurrentId, mSegmentStart, mSegmentEnd);
+        }
+
+        return (steps == 0);
     }
 
     private void onUtteranceCompleted(String utteranceId) {
-        if (!mIsSpeaking) {
-            // The last utterance has completed.
+        if (mCurrentUnit == null) {
+            // Shouldn't be speaking now.
             return;
         }
-        
-        if (!mSingAlong.hasNext()) {
-            // This is the last utterance.
+
+        if (isUnitCompleted()) {
+            // TODO(alanv): Add support for more than one unit.
             stop();
             return;
         }
 
-        String nextString = mSingAlong.next().toString();
-        mParams.put(Engine.KEY_PARAM_UTTERANCE_ID, nextString);
-        mTts.setOnUtteranceCompletedListener(mOnUtteranceCompletedListener);
-        mTts.speak(nextString, TextToSpeech.QUEUE_ADD, mParams);
+        if (mIsPaused) {
+            // Don't move to the next segment if paused.
+            return;
+        }
+
+        if (mBypassAdvance) {
+            mBypassAdvance = false;
+        } else {
+            advanceBreakIterator(1);
+        }
+
+        speakCurrentSegment();
+    }
+
+    private void speakCurrentSegment() {
+        final CharSequence text = mCurrentUnit.subSequence(mSegmentStart, mSegmentEnd);
+        mTts.speak(text.toString(), TextToSpeech.QUEUE_FLUSH, mParams);
+    }
+
+    private boolean isUnitCompleted() {
+        return mSegmentEnd >= mCurrentUnit.length();
     }
 
     private final Handler mHandler = new Handler() {
@@ -84,6 +172,9 @@ public class SingAlongTextToSpeech {
             switch (msg.what) {
                 case UTTERANCE_COMPLETED:
                     onUtteranceCompleted((String) msg.obj);
+                    break;
+                case RESUME_SPEAKING:
+                    resume();
                     break;
             }
         }
@@ -95,9 +186,12 @@ public class SingAlongTextToSpeech {
             mHandler.obtainMessage(UTTERANCE_COMPLETED, utteranceId).sendToTarget();
         }
     };
-    
+
     public interface SingAlongListener {
-        public void onSpeechStarted();
-        public void onSpeechCompleted();
+        public void onUnitStarted(int id);
+
+        public void onSegmentStarted(int id, int start, int end);
+
+        public void onUnitCompleted(int id);
     }
 }

@@ -7,7 +7,6 @@ import java.util.Locale;
 
 import android.app.AlertDialog;
 import android.app.AlertDialog.Builder;
-import android.app.Dialog;
 import android.app.ProgressDialog;
 import android.content.ContentResolver;
 import android.content.ContentValues;
@@ -31,10 +30,10 @@ import android.widget.EditText;
 public class FileSynthesizer {
     private static final String UTTERANCE_ID = "synthesize";
     private static final int UTTERANCE_COMPLETED = 1;
-    
+
     private final ContentValues mContentValues = new ContentValues(10);
     private final HashMap<String, String> mSpeechParams = new HashMap<String, String>();
-    
+
     private final Context mContext;
     private final TextToSpeech mTts;
     private final LayoutInflater mLayoutInflater;
@@ -43,20 +42,20 @@ public class FileSynthesizer {
 
     private ProgressDialog mProgressDialog;
     private FileSynthesizerListener mListener;
-    
+
     private boolean mCanceled = false;
 
     public FileSynthesizer(Context context, TextToSpeech tts) {
         mContext = context;
         mTts = tts;
-        
+
         mArtistValue = mContext.getString(R.string.app_name);
         mAlbumValue = mContext.getString(R.string.album_name);
         mLayoutInflater = LayoutInflater.from(mContext);
-        
+
         mSpeechParams.put(Engine.KEY_PARAM_UTTERANCE_ID, UTTERANCE_ID);
     }
-    
+
     public void setListener(FileSynthesizerListener listener) {
         mListener = listener;
     }
@@ -64,7 +63,7 @@ public class FileSynthesizer {
     public void synthesize(final String text, final Locale locale, final int pitch, final int rate) {
         final View layout = mLayoutInflater.inflate(R.layout.save_dialog, null);
         final EditText editText = (EditText) layout.findViewById(R.id.input);
-        
+
         final DialogInterface.OnClickListener onClick = new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
@@ -77,7 +76,7 @@ public class FileSynthesizer {
                 }
             }
         };
-        
+
         final AlertDialog dialog = new Builder(mContext).setMessage(R.string.save_file_message)
                 .setTitle(R.string.save_file_title).setPositiveButton(android.R.string.ok, onClick)
                 .setNegativeButton(android.R.string.cancel, onClick).setView(layout).create();
@@ -87,7 +86,7 @@ public class FileSynthesizer {
             public boolean onKey(View v, int keyCode, KeyEvent event) {
                 if ((event.getAction() == KeyEvent.ACTION_DOWN)
                         && (keyCode == KeyEvent.KEYCODE_ENTER)) {
-                    onClick.onClick(dialog, Dialog.BUTTON_POSITIVE);
+                    onClick.onClick(dialog, DialogInterface.BUTTON_POSITIVE);
                     dialog.dismiss();
                     return true;
                 }
@@ -98,10 +97,10 @@ public class FileSynthesizer {
 
         dialog.show();
     }
-    
+
     private void onUtteranceCompleted(String utteranceId) {
         mTts.setOnUtteranceCompletedListener(null);
-        
+
         if (mCanceled) {
             onWriteCanceled();
         } else {
@@ -112,14 +111,14 @@ public class FileSynthesizer {
     /**
      * Inserts media information into the database after a successful save
      * operation.
-     * 
+     *
      * @param contentValues The media descriptor values.
      */
     private void onWriteCompleted() {
         final ContentResolver resolver = mContext.getContentResolver();
         final String path = mContentValues.getAsString(MediaColumns.DATA);
         final Uri uriForPath = Media.getContentUriForPath(path);
-        
+
         resolver.insert(uriForPath, mContentValues);
 
         // Clears last queue element to avoid deletion on exit.
@@ -136,13 +135,13 @@ public class FileSynthesizer {
         if (mListener != null) {
             mListener.onFileSynthesized(mContentValues);
         }
-        
+
         mContentValues.clear();
     }
 
     /**
      * Deletes the partially completed file after a canceled save operation.
-     * 
+     *
      * @param values The media descriptor values.
      */
     private void onWriteCanceled() {
@@ -165,7 +164,7 @@ public class FileSynthesizer {
         } catch (final RuntimeException e) {
             e.printStackTrace();
         }
-        
+
         mContentValues.clear();
     }
 
@@ -241,7 +240,7 @@ public class FileSynthesizer {
             e.printStackTrace();
         }
     }
-    
+
     private final Handler mHandler = new Handler() {
         @Override
         public void handleMessage(Message msg) {
@@ -267,7 +266,7 @@ public class FileSynthesizer {
             mTts.stop();
         }
     };
-    
+
     public interface FileSynthesizerListener {
         public void onFileSynthesized(ContentValues contentValues);
     }

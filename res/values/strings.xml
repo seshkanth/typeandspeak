@@ -5,13 +5,11 @@
     <string name="pitch">Pitch</string>
     <string name="speed">Speed</string>
     <string name="speak">Speak</string>
-    <string name="stop_speaking">Stop speech</string>
     <string name="spoken_clear">Clear</string>
     <string name="spoken_write">Save</string>
     <string name="spoken_prefs">Properties</string>
     <string name="failed_init">Failed to initialize speech synthesizer</string>
     <string name="album_name">Saved Speech</string>
-    <string name="speaking">Speaking…</string>
     <string name="install_data_title">Install Language data?</string>
     <string name="install_data_message">Type and Speak requires speech synthesis data.\n\nPlease check your SD card (if applicable) and click OK to download synthesis data for your text-to-speech engine.</string>
     <string name="save_file_title">Save as WAV</string>
@@ -31,5 +29,10 @@
     <string name="library">Library</string>
     <string name="flag">Flag</string>
     <string name="input_hint">File name</string>
+    <string name="stop">Stop</string>
+    <string name="pause">Pause</string>
+    <string name="rewind">Previous</string>
+    <string name="fast_forward">Next</string>
+    <string name="resume">Resume</string>
 
 </resources>

@@ -12,15 +12,6 @@
 
 # Add any project specific keep options here:
 
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
-
 -dontobfuscate
--libraryjars libs/boilerpipe-1.2.0.jar
--libraryjars libs/nekohtml-1.9.13.jar
--libraryjars libs/xerces-2.9.1.jar
 -ignorewarnings
+-keep public class org.cyberneko.html.xercesbridge.**
