@@ -167,6 +167,11 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
         mLocale = new Locale(prefs.getString(PREF_LOCALE, defaultLocale));
         mPitch = prefs.getInt(PREF_PITCH, 50);
         mSpeed = prefs.getInt(PREF_SPEED, 50);
+        
+        // Never load the ADD_MORE locale as the default!
+        if (LanguageAdapter.LOCALE_ADD_MORE.equals(mLocale)) {
+            mLocale = Locale.getDefault();
+        }
     }
 
     @Override
@@ -575,7 +580,7 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
                 case R.id.language_spinner:
                     final Locale selected = (Locale) mLanguageSpinner.getSelectedItem();
 
-                    if (LanguageAdapter.LOCALE_ADD_MORE.equals(mLocale)) {
+                    if (LanguageAdapter.LOCALE_ADD_MORE.equals(selected)) {
                         mLanguageSpinner.setSelection(mLocalePosition);
 
                         final Intent intent = new Intent(Intent.ACTION_VIEW);
