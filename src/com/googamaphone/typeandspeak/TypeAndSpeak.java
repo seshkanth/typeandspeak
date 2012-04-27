@@ -649,8 +649,6 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
     };
 
     private final SingAlongListener mSingAlongListener = new SingAlongListener() {
-        private KeyListener mKeyListener;
-
         @Override
         public void onUnitStarted(int id) {
             mSpeakButton.setVisibility(View.GONE);
@@ -658,10 +656,6 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
             mPauseButton.setVisibility(View.VISIBLE);
             mResumeButton.setVisibility(View.GONE);
 
-            mKeyListener = mInputText.getKeyListener();
-
-            mInputText.setKeyListener(null);
-            mInputText.setCursorVisible(false);
             mInputText.setSelection(0, 0);
         }
 
@@ -677,15 +671,10 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
         @Override
         public void onUnitCompleted(int id) {
             mInputText.setSelection(0, 0);
-            mInputText.setCursorVisible(true);
-            mInputText.setKeyListener(mKeyListener);
-            mInputText.setOnTouchListener(null);
 
             final Spannable text = mInputText.getText();
             text.removeSpan(FOREGROUND_SPAN);
             text.removeSpan(BACKGROUND_SPAN);
-
-            mKeyListener = null;
 
             mSpeakControls.setVisibility(View.GONE);
             mSpeakButton.setVisibility(View.VISIBLE);

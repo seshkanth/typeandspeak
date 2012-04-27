@@ -108,6 +108,10 @@ public class SingAlongTextToSpeech {
     }
 
     private boolean advanceBreakIterator(int steps) {
+        if (mCurrentUnit == null) {
+            return false;
+        }
+        
         while ((steps < 0) && (mSegmentStart > 0)) {
             mSegmentEnd = mSegmentStart;
             mBreakIterator.preceding(mSegmentEnd);
