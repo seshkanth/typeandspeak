@@ -2,12 +2,12 @@
 package com.googamaphone.typeandspeak;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
+import android.annotation.TargetApi;
 import android.app.AlertDialog.Builder;
 import android.app.Dialog;
 import android.content.ActivityNotFoundException;
@@ -18,46 +18,40 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
-import android.database.Cursor;
+import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
 import android.graphics.Color;
 import android.media.AudioManager;
-import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
-import android.provider.BaseColumns;
-import android.provider.MediaStore;
-import android.provider.MediaStore.Audio.AlbumColumns;
+import android.provider.MediaStore.MediaColumns;
 import android.provider.Settings;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.TextToSpeech.Engine;
 import android.text.Spannable;
 import android.text.Spanned;
 import android.text.TextUtils;
-import android.text.method.KeyListener;
 import android.text.style.BackgroundColorSpan;
 import android.text.style.CharacterStyle;
 import android.text.style.ForegroundColorSpan;
-import android.view.LayoutInflater;
-import android.view.Menu;
-import android.view.MenuItem;
+import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowManager.LayoutParams;
 import android.widget.AdapterView;
-import android.widget.AdapterView.OnItemSelectedListener;
-import android.widget.Button;
+import android.widget.ArrayAdapter;
 import android.widget.EditText;
-import android.widget.ImageButton;
+import android.widget.ListView;
 import android.widget.SeekBar;
-import android.widget.Spinner;
 import android.widget.Toast;
 
 import com.googamaphone.GoogamaphoneActivity;
+import com.googamaphone.PinnedDialog;
+import com.googamaphone.PinnedDialogManager;
 import com.googamaphone.typeandspeak.FileSynthesizer.FileSynthesizerListener;
 import com.googamaphone.typeandspeak.SingAlongTextToSpeech.SingAlongListener;
-
-import de.l3s.boilerpipe.BoilerpipeProcessingException;
-import de.l3s.boilerpipe.extractors.ArticleExtractor;
 
 public class TypeAndSpeak extends GoogamaphoneActivity {
     private static final String TAG = TypeAndSpeak.class.getSimpleName();
@@ -73,7 +67,14 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
 
     // Dialog identifiers.
     private static final int DIALOG_INSTALL_DATA = 1;
-    private static final int DIALOG_PROPERTIES = 2;
+    private static final int DIALOG_CANNOT_INSTALL_DATA = 2;
+
+    // Pinned dialog identifiers.
+    private static final int PINNED_PROPERTIES = 1;
+    private static final int PINNED_SAVE = 2;
+    private static final int PINNED_LANGUAGES = 3;
+    private static final int PINNED_NO_TEXT = 4;
+    private static final int PINNED_CONFIRM_CLEAR = 5;
 
     // Activity request identifiers.
     private static final int REQUEST_CHECK_DATA = 1;
@@ -95,6 +96,9 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
     /** Text-to-speech service used for speaking. */
     private TextToSpeech mTts;
 
+    /** Audio manager used to gain audio focus. */
+    private AudioManager mAudioManager;
+
     /** Sing-along manager used to iterate through the edit text. */
     private SingAlongTextToSpeech mSingAlongTts;
 
@@ -102,13 +106,14 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
     private FileSynthesizer mSynth;
 
     // Interface components.
-    private Button mSpeakButton;
     private ViewGroup mSpeakControls;
-    private ImageButton mPauseButton;
-    private ImageButton mResumeButton;
-    private ImageButton mWriteButton;
+    private ViewGroup mDefaultControls;
+    private View mSpeakButton;
+    private View mPauseButton;
+    private View mResumeButton;
+    private View mSaveButton;
     private EditText mInputText;
-    private Spinner mLanguageSpinner;
+    private ArrayAdapter<Locale> mLanguagesAdapter;
 
     // Speech properties.
     private Locale mLocale;
@@ -138,7 +143,8 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
         mParams.put(Engine.KEY_PARAM_UTTERANCE_ID, TAG);
         mTtsEngine = Settings.Secure.getString(resolver, Settings.Secure.TTS_DEFAULT_SYNTH);
         mTts = new TextToSpeech(this, initListener);
-        
+        mAudioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
+
         final SharedPreferences prefs = getPreferences(MODE_PRIVATE);
         mInputText.setText(prefs.getString(PREF_TEXT, ""));
 
@@ -167,7 +173,7 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
         mLocale = new Locale(prefs.getString(PREF_LOCALE, defaultLocale));
         mPitch = prefs.getInt(PREF_PITCH, 50);
         mSpeed = prefs.getInt(PREF_SPEED, 50);
-        
+
         // Never load the ADD_MORE locale as the default!
         if (LanguageAdapter.LOCALE_ADD_MORE.equals(mLocale)) {
             mLocale = Locale.getDefault();
@@ -195,6 +201,7 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
         mTts.shutdown();
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     protected Dialog onCreateDialog(int id) {
         switch (id) {
@@ -206,6 +213,16 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
                             case DialogInterface.BUTTON_POSITIVE: {
                                 final Intent intent = new Intent(Engine.ACTION_INSTALL_TTS_DATA);
                                 intent.setPackage(mTtsEngine);
+
+                                final PackageManager pm = getPackageManager();
+                                final List<ResolveInfo> activities = pm.queryIntentActivities(
+                                        intent, 0);
+
+                                if (activities.size() <= 0) {
+                                    showDialog(DIALOG_CANNOT_INSTALL_DATA);
+                                    break;
+                                }
+
                                 startActivityForResult(intent, REQUEST_INSTALL_DATA);
                                 break;
                             }
@@ -219,22 +236,145 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
                         .setNegativeButton(android.R.string.no, null).create();
             }
 
-            case DIALOG_PROPERTIES: {
-                final View properties = LayoutInflater.from(this)
-                        .inflate(R.layout.properties, null);
-
-                ((SeekBar) properties.findViewById(R.id.seekPitch))
-                        .setOnSeekBarChangeListener(mSeekListener);
-                ((SeekBar) properties.findViewById(R.id.seekSpeed))
-                        .setOnSeekBarChangeListener(mSeekListener);
-
-                return new Builder(this).setView(properties).setTitle(R.string.properties_title)
-                        .setPositiveButton(android.R.string.ok, null).create();
+            case DIALOG_CANNOT_INSTALL_DATA: {
+                return new Builder(this)
+                        .setTitle(R.string.tts_failed)
+                        .setMessage(R.string.cannot_install_tts_data)
+                        .setPositiveButton(android.R.string.ok,
+                                new DialogInterface.OnClickListener() {
+                                    @Override
+                                    public void onClick(DialogInterface dialog, int which) {
+                                        finish();
+                                    }
+                                }).create();
             }
         }
 
         return super.onCreateDialog(id);
     }
+
+    private final PinnedDialogManager mPinnedDialogManager = new PinnedDialogManager() {
+        @Override
+        protected PinnedDialog onCreatePinnedDialog(int id) {
+            switch (id) {
+                case PINNED_CONFIRM_CLEAR: {
+                    final PinnedDialog dialog = new PinnedDialog(TypeAndSpeak.this)
+                            .setContentView(R.layout.pinned_confirm_clear);
+
+                    final View.OnClickListener clickListener = new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            switch (v.getId()) {
+                                case R.id.confirm_clear:
+                                    clear();
+                                    break;
+                            }
+                            dialog.dismiss();
+                        }
+                    };
+
+                    dialog.findViewById(R.id.cancel_clear).setOnClickListener(clickListener);
+                    dialog.findViewById(R.id.confirm_clear).setOnClickListener(clickListener);
+
+                    return dialog;
+                }
+                case PINNED_NO_TEXT: {
+                    return new PinnedDialog(TypeAndSpeak.this)
+                            .setContentView(R.layout.pinned_no_text);
+                }
+                case PINNED_LANGUAGES: {
+                    final PinnedDialog dialog = new PinnedDialog(TypeAndSpeak.this)
+                            .setContentView(R.layout.pinned_languages);
+
+                    final ListView listView = (ListView) dialog.findViewById(R.id.languages);
+                    listView.setAdapter(mLanguagesAdapter);
+                    listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                        @Override
+                        public void onItemClick(AdapterView<?> parent, View view, int position,
+                                long id) {
+                            final Locale selected = (Locale) parent.getItemAtPosition(position);
+                            mLocale = selected;
+                            mLocalePosition = position;
+                            dialog.dismiss();
+                        }
+                    });
+
+                    return dialog;
+                }
+                case PINNED_PROPERTIES: {
+                    final PinnedDialog dialog = new PinnedDialog(TypeAndSpeak.this)
+                            .setContentView(R.layout.pinned_properties);
+
+                    ((SeekBar) dialog.findViewById(R.id.seekPitch))
+                            .setOnSeekBarChangeListener(mSeekListener);
+                    ((SeekBar) dialog.findViewById(R.id.seekSpeed))
+                            .setOnSeekBarChangeListener(mSeekListener);
+
+                    return dialog;
+                }
+                case PINNED_SAVE: {
+                    final PinnedDialog dialog = new PinnedDialog(TypeAndSpeak.this)
+                            .setContentView(R.layout.pinned_save);
+                    final EditText editText = (EditText) dialog.findViewById(R.id.input);
+                    final View confirmSave = dialog.findViewById(R.id.confirm_save);
+
+                    final LayoutParams params = dialog.getParams();
+                    params.flags = ~(~params.flags | LayoutParams.FLAG_ALT_FOCUSABLE_IM);
+                    params.softInputMode = LayoutParams.SOFT_INPUT_STATE_UNCHANGED;
+                    dialog.setParams(params);
+
+                    editText.setOnKeyListener(new View.OnKeyListener() {
+                        @Override
+                        public boolean onKey(View v, int keyCode, KeyEvent event) {
+                            if ((event.getAction() == KeyEvent.ACTION_UP)
+                                    && (keyCode == KeyEvent.KEYCODE_ENTER)) {
+                                confirmSave.performClick();
+                                return true;
+                            }
+                            return false;
+                        }
+                    });
+
+                    final View.OnClickListener clickListener = new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            switch (v.getId()) {
+                                case R.id.confirm_save:
+                                    final String filename = editText.getText().toString();
+                                    final String text = mInputText.getText().toString();
+                                    mSynth.writeInput(text, mLocale, mPitch, mSpeed, filename);
+                                    dialog.dismiss();
+                                    break;
+                            }
+                            dialog.dismiss();
+                        }
+                    };
+
+                    confirmSave.setOnClickListener(clickListener);
+                    dialog.findViewById(R.id.cancel_save).setOnClickListener(clickListener);
+
+                    return dialog;
+                }
+            }
+
+            return super.onCreatePinnedDialog(id);
+        }
+
+        @Override
+        protected void onPreparePinnedDialog(int id, PinnedDialog dialog, Bundle arguments) {
+            switch (id) {
+                case PINNED_LANGUAGES: {
+                    ((ListView) dialog.findViewById(R.id.languages)).setSelection(mLocalePosition);
+                    break;
+                }
+                case PINNED_PROPERTIES: {
+                    ((SeekBar) dialog.findViewById(R.id.seekPitch)).setProgress(mPitch);
+                    ((SeekBar) dialog.findViewById(R.id.seekSpeed)).setProgress(mSpeed);
+                    break;
+                }
+            }
+        }
+    };
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -250,32 +390,10 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
         }
     }
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.menu, menu);
-
-        return super.onCreateOptionsMenu(menu);
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-            case R.id.menu_library: {
-                startAlbumActivity(this);
-                return true;
-            }
-        }
-
-        return super.onOptionsItemSelected(item);
-    }
-
+    @SuppressWarnings("deprecation")
     @Override
     public void onPrepareDialog(int id, Dialog dialog) {
         switch (id) {
-            case DIALOG_PROPERTIES:
-                ((SeekBar) dialog.findViewById(R.id.seekPitch)).setProgress(mPitch);
-                ((SeekBar) dialog.findViewById(R.id.seekSpeed)).setProgress(mSpeed);
-                break;
             default:
                 super.onPrepareDialog(id, dialog);
         }
@@ -285,65 +403,42 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
      * Loads interface components into variables and sets listeners.
      */
     private void setupUserInterface() {
-        mSpeakButton = (Button) findViewById(R.id.speak);
+        mSpeakButton = findViewById(R.id.speak);
         mSpeakButton.setOnClickListener(mOnClickListener);
         mSpeakButton.setVisibility(View.VISIBLE);
 
         mSpeakControls = (ViewGroup) findViewById(R.id.play_controls);
         mSpeakControls.setVisibility(View.GONE);
 
+        mDefaultControls = (ViewGroup) findViewById(R.id.default_controls);
+        mDefaultControls.setVisibility(View.VISIBLE);
+
         mSpeakControls.findViewById(R.id.stop).setOnClickListener(mOnClickListener);
         mSpeakControls.findViewById(R.id.rewind).setOnClickListener(mOnClickListener);
         mSpeakControls.findViewById(R.id.fast_forward).setOnClickListener(mOnClickListener);
 
-        mPauseButton = (ImageButton) mSpeakControls.findViewById(R.id.pause);
+        mPauseButton = mSpeakControls.findViewById(R.id.pause);
         mPauseButton.setOnClickListener(mOnClickListener);
         mPauseButton.setVisibility(View.VISIBLE);
 
-        mResumeButton = (ImageButton) mSpeakControls.findViewById(R.id.resume);
+        mResumeButton = mSpeakControls.findViewById(R.id.resume);
         mResumeButton.setOnClickListener(mOnClickListener);
         mResumeButton.setVisibility(View.GONE);
 
-        mWriteButton = (ImageButton) findViewById(R.id.write);
-        mWriteButton.setOnClickListener(mOnClickListener);
+        mSaveButton = findViewById(R.id.write);
+        mSaveButton.setOnClickListener(mOnClickListener);
 
         findViewById(R.id.clear).setOnClickListener(mOnClickListener);
         findViewById(R.id.prefs).setOnClickListener(mOnClickListener);
-
-        mLanguageSpinner = (Spinner) findViewById(R.id.language_spinner);
-        mLanguageSpinner.setOnItemSelectedListener(mOnLangSelected);
+        findViewById(R.id.language).setOnClickListener(mOnClickListener);
+        findViewById(R.id.library).setOnClickListener(mOnClickListener);
 
         mInputText = (EditText) findViewById(R.id.input_text);
     }
 
     /**
-     * Displays the activity for viewing the Type and Speak album.
-     */
-    public static void startAlbumActivity(Context context) {
-        final String album = context.getString(R.string.album_name);
-        final ContentResolver resolver = context.getContentResolver();
-        final String[] projection = new String[] {
-                BaseColumns._ID, AlbumColumns.ALBUM
-        };
-        final String selection = AlbumColumns.ALBUM + "=?";
-        final String[] args = new String[] {
-            album
-        };
-        final Cursor albums = resolver.query(MediaStore.Audio.Albums.EXTERNAL_CONTENT_URI,
-                projection, selection, args, null);
-
-        if (albums.moveToFirst()) {
-            final int albumId = albums.getInt(0);
-            final Intent intent = new Intent(Intent.ACTION_PICK);
-            intent.setDataAndType(Uri.EMPTY, "vnd.android.cursor.dir/track");
-            intent.putExtra("album", albumId);
-            context.startActivity(intent);
-        }
-    }
-
-    /**
      * Restores a previously saved state.
-     *
+     * 
      * @param savedInstanceState The previously saved state.
      * @boolean fromIntent Whether the state is coming from an intent.
      */
@@ -354,37 +449,33 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
             return;
         }
 
-        if (fromIntent && (text.startsWith("http://") || text.startsWith("https://"))) {
-            // TODO: Extract full URL from RSS items.
-            try {
-                final String extracted = ArticleExtractor.getInstance().getText(new URL(text));
-
-                if (TextUtils.isEmpty(extracted)) {
-                    text = getString(R.string.failed_extraction, text, text);
-                } else {
-                    text = extracted;
-                }
-            } catch (final MalformedURLException e) {
-                e.printStackTrace();
-            } catch (final BoilerpipeProcessingException e) {
-                e.printStackTrace();
-            }
-        }
+        /*
+         * if (fromIntent && (text.startsWith("http://") ||
+         * text.startsWith("https://"))) { // TODO: Extract full URL from RSS
+         * items. try { final String extracted =
+         * ArticleExtractor.getInstance().getText(new URL(text)); if
+         * (TextUtils.isEmpty(extracted)) { text =
+         * getString(R.string.failed_extraction, text, text); } else { text =
+         * extracted; } } catch (final MalformedURLException e) {
+         * e.printStackTrace(); } catch (final BoilerpipeProcessingException e)
+         * { e.printStackTrace(); } }
+         */
 
         mInputText.setText(text);
     }
 
     /**
      * Shows the media playback dialog for the given values.
-     *
+     * 
      * @param contentValues The content values for the media.
      * @param contentUri The URI for the media.
      */
     private void showPlaybackDialog(ContentValues contentValues) {
-        final PlaybackDialog playback = new PlaybackDialog(this);
+        final PlaybackDialog playback = new PlaybackDialog(this, false);
 
         try {
-            playback.setFile(contentValues);
+            final String path = contentValues.getAsString(MediaColumns.DATA);
+            playback.setFile(path);
             playback.show();
         } catch (final IOException e) {
             e.printStackTrace();
@@ -392,29 +483,62 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
     }
 
     /**
-     * Speaks the currrent text aloud.
+     * Speaks the current text aloud.
      */
     private void speak() {
+        final CharSequence text = mInputText.getText();
+
+        if (TextUtils.isEmpty(text)) {
+            mPinnedDialogManager.showPinnedDialog(PINNED_NO_TEXT, mSpeakButton);
+            mHandler.dismissDialogDelayed(PINNED_NO_TEXT, 1000);
+            return;
+        }
+
         if (mSingAlongTts == null) {
             mSingAlongTts = new SingAlongTextToSpeech(this, mTts);
             mSingAlongTts.setListener(mSingAlongListener);
         }
 
-        final Locale locale = (Locale) mLanguageSpinner.getSelectedItem();
-        if (locale != null) {
-            mTts.setLanguage(locale);
+        if (mLocale != null) {
+            mTts.setLanguage(mLocale);
         }
 
         mTts.setPitch(mPitch / 50.0f);
         mTts.setSpeechRate(mSpeed / 50.0f);
 
-        mSingAlongTts.speak(mInputText.getText());
+        mSingAlongTts.speak(text);
+    }
+
+    private void manageAudioFocus(boolean gain) {
+        if (Build.VERSION.SDK_INT < 8) {
+            return;
+        }
+
+        manageAudioFocusChecked(gain);
+    }
+
+    @TargetApi(8)
+    private void manageAudioFocusChecked(boolean gain) {
+        if (gain) {
+            mAudioManager.requestAudioFocus(null, AudioManager.STREAM_MUSIC,
+                    AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
+        } else {
+            mAudioManager.abandonAudioFocus(null);
+        }
     }
 
     /**
      * Writes the current text to file.
      */
-    private void write() {
+    private void write(View pinnedView) {
+        final CharSequence text = mInputText.getText();
+
+        if (TextUtils.isEmpty(text)) {
+            mPinnedDialogManager.showPinnedDialog(PINNED_NO_TEXT, mSaveButton);
+            mHandler.dismissDialogDelayed(PINNED_NO_TEXT, 1000);
+            return;
+        }
+
         if (mSynth == null) {
             mSynth = new FileSynthesizer(this, mTts);
             mSynth.setListener(new FileSynthesizerListener() {
@@ -425,12 +549,7 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
             });
         }
 
-        final String text = mInputText.getText().toString();
-        final Locale locale = (Locale) mLanguageSpinner.getSelectedItem();
-        final int pitch = mPitch;
-        final int rate = mSpeed;
-
-        mSynth.synthesize(text, locale, pitch, rate);
+        mPinnedDialogManager.showPinnedDialog(PINNED_SAVE, pinnedView);
     }
 
     /**
@@ -443,14 +562,13 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
     /**
      * Populates the language adapter with the specified locales. Attempts to
      * set the current selection based on {@link #mLocale}.
-     *
+     * 
      * @param locales The locales to populate.
      */
     private void populateAdapter(Set<Locale> locales) {
-        final LanguageAdapter languageAdapter = new LanguageAdapter(this, R.layout.language,
-                R.id.text, R.id.image);
-        languageAdapter.setDropDownViewResource(R.layout.language_dropdown);
-        languageAdapter.clear();
+        mLanguagesAdapter = new LanguageAdapter(this, R.layout.language, R.id.text, R.id.image);
+        mLanguagesAdapter.setDropDownViewResource(R.layout.language_dropdown);
+        mLanguagesAdapter.clear();
 
         final String preferredLocale = mLocale.toString();
         int preferredSelection = 0;
@@ -458,65 +576,55 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
         // Add the available locales to the adapter, watching for the preferred
         // locale.
         for (final Locale locale : locales) {
-            languageAdapter.add(locale);
+            mLanguagesAdapter.add(locale);
 
             if (locale.toString().equalsIgnoreCase(preferredLocale)) {
-                preferredSelection = (languageAdapter.getCount() - 1);
+                preferredSelection = (mLanguagesAdapter.getCount() - 1);
             }
         }
 
-        final View languagePanel = findViewById(R.id.language_panel);
-
-        // Hide the language panel if we didn't find any available locales.
-        if (languageAdapter.getCount() <= 0) {
-            languagePanel.setVisibility(View.GONE);
-        } else {
-            languageAdapter.add(LanguageAdapter.LOCALE_ADD_MORE);
-            languagePanel.setVisibility(View.VISIBLE);
-        }
-
         // Set up the language spinner.
-        mLanguageSpinner.setAdapter(languageAdapter);
-        mLanguageSpinner.setSelection(preferredSelection);
+        mLocalePosition = preferredSelection;
     }
 
     /**
      * Handles the text-to-speech language check callback.
-     *
+     * 
      * @param resultCode The result code.
      * @param data The returned data.
      */
+    @SuppressWarnings("deprecation")
     private void onTtsCheck(int resultCode, Intent data) {
         // If data is null, always prompt the user to install voice data.
         if (data == null) {
             mSpeakButton.setEnabled(false);
-            mWriteButton.setEnabled(false);
+            mSaveButton.setEnabled(false);
             showDialog(DIALOG_INSTALL_DATA);
             return;
         }
 
         mSpeakButton.setEnabled(true);
-        mWriteButton.setEnabled(true);
+        mSaveButton.setEnabled(true);
 
         final boolean passed = (resultCode == TextToSpeech.Engine.CHECK_VOICE_DATA_PASS);
         final Set<Locale> locales = TextToSpeechUtils.loadTtsLanguages(data);
 
         if (!locales.isEmpty() || passed) {
             mSpeakButton.setEnabled(true);
-            mWriteButton.setEnabled(true);
+            mSaveButton.setEnabled(true);
             populateAdapter(locales);
             return;
         }
 
         // Failed to find languages, prompt the user to install voice data.
         mSpeakButton.setEnabled(false);
-        mWriteButton.setEnabled(false);
+        mSaveButton.setEnabled(false);
         showDialog(DIALOG_INSTALL_DATA);
     }
 
     /**
      * Handles the text-to-speech initialization callback.
-     *
+     * 
      * @param status The initialization status.
      */
     private void onTtsInitialized(int status) {
@@ -536,7 +644,7 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
         }
 
         mSpeakButton.setEnabled(true);
-        mWriteButton.setEnabled(true);
+        mSaveButton.setEnabled(true);
     }
 
     /**
@@ -571,42 +679,6 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
     };
 
     /**
-     * Listens for language selection and updates the current locale.
-     */
-    private final OnItemSelectedListener mOnLangSelected = new OnItemSelectedListener() {
-        @Override
-        public void onItemSelected(AdapterView<?> view, View parent, int position, long id) {
-            switch (view.getId()) {
-                case R.id.language_spinner:
-                    final Locale selected = (Locale) mLanguageSpinner.getSelectedItem();
-
-                    if (LanguageAdapter.LOCALE_ADD_MORE.equals(selected)) {
-                        mLanguageSpinner.setSelection(mLocalePosition);
-
-                        final Intent intent = new Intent(Intent.ACTION_VIEW);
-                        intent.setData(Uri.parse("market://search?q=tts&c=apps"));
-                        intent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY
-                                | Intent.FLAG_ACTIVITY_CLEAR_WHEN_TASK_RESET);
-
-                        startActivity(intent);
-                        
-                        return;
-                    }
-                    
-                    mLocale = selected;
-                    mLocalePosition = position;
-
-                    break;
-            }
-        }
-
-        @Override
-        public void onNothingSelected(AdapterView<?> arg0) {
-            // Do nothing.
-        }
-    };
-
-    /**
      * Listens for clicks.
      */
     private final View.OnClickListener mOnClickListener = new View.OnClickListener() {
@@ -614,16 +686,22 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
         public void onClick(View view) {
             switch (view.getId()) {
                 case R.id.prefs:
-                    showDialog(DIALOG_PROPERTIES);
+                    mPinnedDialogManager.showPinnedDialog(PINNED_PROPERTIES, view);
+                    break;
+                case R.id.language:
+                    mPinnedDialogManager.showPinnedDialog(PINNED_LANGUAGES, view);
                     break;
                 case R.id.clear:
-                    clear();
+                    mPinnedDialogManager.showPinnedDialog(PINNED_CONFIRM_CLEAR, view);
                     break;
                 case R.id.speak:
                     speak();
                     break;
                 case R.id.write:
-                    write();
+                    write(view);
+                    break;
+                case R.id.library:
+                    startActivity(new Intent(TypeAndSpeak.this, LibraryActivity.class));
                     break;
                 case R.id.stop:
                     mSingAlongTts.stop();
@@ -651,12 +729,13 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
     private final SingAlongListener mSingAlongListener = new SingAlongListener() {
         @Override
         public void onUnitStarted(int id) {
-            mSpeakButton.setVisibility(View.GONE);
             mSpeakControls.setVisibility(View.VISIBLE);
+            mDefaultControls.setVisibility(View.GONE);
             mPauseButton.setVisibility(View.VISIBLE);
             mResumeButton.setVisibility(View.GONE);
 
             mInputText.setSelection(0, 0);
+            manageAudioFocus(true);
         }
 
         @Override
@@ -677,7 +756,8 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
             text.removeSpan(BACKGROUND_SPAN);
 
             mSpeakControls.setVisibility(View.GONE);
-            mSpeakButton.setVisibility(View.VISIBLE);
+            mDefaultControls.setVisibility(View.VISIBLE);
+            manageAudioFocus(false);
         }
     };
 
@@ -686,6 +766,7 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
      */
     private class TypeAndSpeakHandler extends Handler {
         private static final int TTS_INITIALIZED = 1;
+        private static final int DISMISS_DIALOG = 2;
 
         @Override
         public void handleMessage(Message msg) {
@@ -693,11 +774,17 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
                 case TTS_INITIALIZED:
                     onTtsInitialized(msg.arg1);
                     break;
+                case DISMISS_DIALOG:
+                    mPinnedDialogManager.dismissPinnedDialog(msg.arg1);
             }
         }
 
         public void transferOnTtsInitialized(int status) {
             obtainMessage(TTS_INITIALIZED, status, 0).sendToTarget();
+        }
+
+        public void dismissDialogDelayed(int id, long delay) {
+            sendMessageDelayed(obtainMessage(DISMISS_DIALOG, id, 0), delay);
         }
     }
 }

@@ -3,6 +3,7 @@
 	<name>TypeAndSpeak</name>
 	<comment></comment>
 	<projects>
+		<project>typeandspeak-libs</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>

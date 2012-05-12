@@ -14,11 +14,8 @@ import java.util.TreeSet;
 import android.content.Intent;
 import android.os.Bundle;
 import android.speech.tts.TextToSpeech.Engine;
-import android.util.Log;
 
 public class TextToSpeechUtils {
-    private static final String TAG = TextToSpeechUtils.class.getSimpleName();
-
     /** Extra used to enumerate available voices in API 14+ */
     private static final String EXTRA_AVAILABLE_VOICES = "availableVoices";
 
@@ -31,7 +28,6 @@ public class TextToSpeechUtils {
 
     public static Set<Locale> loadTtsLanguages(Intent data) {
         if (data == null) {
-            Log.e(TAG, "data returned as null");
             return Collections.emptySet();
         }
 
@@ -54,7 +50,6 @@ public class TextToSpeechUtils {
 
         // If it's not iterable, fail.
         if (!(langs instanceof Iterable<?>)) {
-            Log.e(TAG, "data not iterable");
             return Collections.emptySet();
         }
 

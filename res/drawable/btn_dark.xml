@@ -11,12 +11,12 @@
                 android:width="1dp"
                 android:color="@color/button_stroke" />
             <corners
-                android:radius="3dp" />
+                android:radius="2dp" />
             <padding
-                android:left="10dp"
-                android:top="10dp"
-                android:right="10dp"
-                android:bottom="10dp" />
+                android:left="4dp"
+                android:top="4dp"
+                android:right="4dp"
+                android:bottom="4dp" />
         </shape>
     </item>
 
@@ -31,12 +31,12 @@
                 android:width="1dp"
                 android:color="@color/button_stroke" />
             <corners
-                android:radius="3dp" />
+                android:radius="2dp" />
             <padding
-                android:left="10dp"
-                android:top="10dp"
-                android:right="10dp"
-                android:bottom="10dp" />
+                android:left="4dp"
+                android:top="4dp"
+                android:right="4dp"
+                android:bottom="4dp" />
         </shape>
     </item>
 
@@ -51,12 +51,12 @@
                 android:width="1dp"
                 android:color="@color/button_stroke" />
             <corners
-                android:radius="3dp" />
+                android:radius="2dp" />
             <padding
-                android:left="10dp"
-                android:top="10dp"
-                android:right="10dp"
-                android:bottom="10dp" />
+                android:left="4dp"
+                android:top="4dp"
+                android:right="4dp"
+                android:bottom="4dp" />
         </shape>
     </item>
 
@@ -71,12 +71,12 @@
                 android:width="1dp"
                 android:color="@color/button_stroke" />
             <corners
-                android:radius="3dp" />
+                android:radius="2dp" />
             <padding
-                android:left="10dp"
-                android:top="10dp"
-                android:right="10dp"
-                android:bottom="10dp" />
+                android:left="4dp"
+                android:top="4dp"
+                android:right="4dp"
+                android:bottom="4dp" />
         </shape>
     </item>
 </selector>

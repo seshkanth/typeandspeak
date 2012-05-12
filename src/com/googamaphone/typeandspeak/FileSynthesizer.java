@@ -22,10 +22,6 @@ import android.provider.MediaStore.Audio.Media;
 import android.provider.MediaStore.MediaColumns;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.TextToSpeech.Engine;
-import android.view.KeyEvent;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.widget.EditText;
 
 public class FileSynthesizer {
     private static final String UTTERANCE_ID = "synthesize";
@@ -36,7 +32,6 @@ public class FileSynthesizer {
 
     private final Context mContext;
     private final TextToSpeech mTts;
-    private final LayoutInflater mLayoutInflater;
     private final String mArtistValue;
     private final String mAlbumValue;
 
@@ -51,7 +46,6 @@ public class FileSynthesizer {
 
         mArtistValue = mContext.getString(R.string.app_name);
         mAlbumValue = mContext.getString(R.string.album_name);
-        mLayoutInflater = LayoutInflater.from(mContext);
 
         mSpeechParams.put(Engine.KEY_PARAM_UTTERANCE_ID, UTTERANCE_ID);
     }
@@ -60,44 +54,7 @@ public class FileSynthesizer {
         mListener = listener;
     }
 
-    public void synthesize(final String text, final Locale locale, final int pitch, final int rate) {
-        final View layout = mLayoutInflater.inflate(R.layout.save_dialog, null);
-        final EditText editText = (EditText) layout.findViewById(R.id.input);
-
-        final DialogInterface.OnClickListener onClick = new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                switch (which) {
-                    case DialogInterface.BUTTON_POSITIVE: {
-                        final String filename = editText.getText().toString();
-                        writeInput(text, locale, pitch, rate, filename);
-                        break;
-                    }
-                }
-            }
-        };
-
-        final AlertDialog dialog = new Builder(mContext).setMessage(R.string.save_file_message)
-                .setTitle(R.string.save_file_title).setPositiveButton(android.R.string.ok, onClick)
-                .setNegativeButton(android.R.string.cancel, onClick).setView(layout).create();
-
-        editText.setOnKeyListener(new View.OnKeyListener() {
-            @Override
-            public boolean onKey(View v, int keyCode, KeyEvent event) {
-                if ((event.getAction() == KeyEvent.ACTION_DOWN)
-                        && (keyCode == KeyEvent.KEYCODE_ENTER)) {
-                    onClick.onClick(dialog, DialogInterface.BUTTON_POSITIVE);
-                    dialog.dismiss();
-                    return true;
-                }
-
-                return false;
-            }
-        });
-
-        dialog.show();
-    }
-
+    @SuppressWarnings("deprecation")
     private void onUtteranceCompleted(String utteranceId) {
         mTts.setOnUtteranceCompletedListener(null);
 
@@ -168,7 +125,8 @@ public class FileSynthesizer {
         mContentValues.clear();
     }
 
-    private void writeInput(String text, Locale locale, int pitch, int rate, String filename) {
+    @SuppressWarnings("deprecation")
+    public void writeInput(String text, Locale locale, int pitch, int rate, String filename) {
         mCanceled = false;
 
         if (filename.toLowerCase().endsWith(".wav")) {

@@ -12,11 +12,10 @@ import android.view.MenuItem;
 import com.googamaphone.typeandspeak.R;
 
 public class GoogamaphoneActivity extends Activity {
-
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        menu.add(Menu.NONE, OPTION_CONTACT, Menu.NONE, R.string.contact_dev)
-                .setIcon(android.R.drawable.ic_menu_send).setAlphabeticShortcut('c');
+        menu.add(Menu.NONE, OPTION_CONTACT, Menu.NONE, R.string.contact_dev).setIcon(
+                R.drawable.ic_menu_send_feedback);
 
         return super.onCreateOptionsMenu(menu);
     }

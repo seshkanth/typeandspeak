@@ -11,12 +11,7 @@
                 android:width="1dp"
                 android:color="@color/button_stroke" />
             <corners
-                android:radius="3dp" />
-            <padding
-                android:left="10dp"
-                android:top="10dp"
-                android:right="10dp"
-                android:bottom="10dp" />
+                android:radius="2dp" />
         </shape>
     </item>
 
@@ -31,12 +26,7 @@
                 android:width="1dp"
                 android:color="@color/button_stroke" />
             <corners
-                android:radius="3dp" />
-            <padding
-                android:left="10dp"
-                android:top="10dp"
-                android:right="10dp"
-                android:bottom="10dp" />
+                android:radius="2dp" />
         </shape>
     </item>
 
@@ -51,12 +41,7 @@
                 android:width="1dp"
                 android:color="@color/button_stroke" />
             <corners
-                android:radius="3dp" />
-            <padding
-                android:left="10dp"
-                android:top="10dp"
-                android:right="10dp"
-                android:bottom="10dp" />
+                android:radius="2dp" />
         </shape>
     </item>
 
@@ -71,12 +56,7 @@
                 android:width="1dp"
                 android:color="@color/button_stroke" />
             <corners
-                android:radius="3dp" />
-            <padding
-                android:left="10dp"
-                android:top="10dp"
-                android:right="10dp"
-                android:bottom="10dp" />
+                android:radius="2dp" />
         </shape>
     </item>
 </selector>

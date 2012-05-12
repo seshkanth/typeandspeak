@@ -5,18 +5,13 @@
     <string name="add_more">Add more languages…</string>
     <string name="pitch">Pitch</string>
     <string name="speed">Speed</string>
-    <string name="speak">Speak</string>
-    <string name="spoken_clear">Clear</string>
-    <string name="spoken_write">Save</string>
-    <string name="share">Share</string>
     <string name="share_to">Share to…</string>
-    <string name="spoken_prefs">Properties</string>
+    <string name="menu_properties">Properties</string>
     <string name="failed_init">Failed to initialize speech synthesizer</string>
     <string name="album_name">Saved Speech</string>
     <string name="install_data_title">Install Language data?</string>
     <string name="install_data_message">Type and Speak requires speech synthesis data.\n\nPlease check your SD card (if applicable) and click OK to download synthesis data for your text-to-speech engine.</string>
-    <string name="save_file_title">Save as WAV</string>
-    <string name="save_file_message">Under what name would you like to save this speech?</string>
+    <string name="save_file_message">Title for saved speech?</string>
     <string name="no_write_title">Error</string>
     <string name="no_write_message">Could not write %s.wav to SD card!</string>
     <string name="exists_title">Error</string>
@@ -28,8 +23,18 @@
     <string name="saved_title">Saved as WAV</string>
     <string name="saved_message">Speech has been saved to SD card as %s. It has also been added to the device media library.</string>
     <string name="play">Play</string>
-    <string name="properties_title">Speech Properties</string>
-    <string name="library">Open library</string>
+    <string name="label_library">Library</string>
+
+    <!-- Library item menu -->
+    <string name="menu_delete">Delete</string>
+    <string name="menu_share">Share</string>
+
+    <!-- Main menu -->
+    <string name="menu_language">Language</string>
+    <string name="menu_clear">Clear</string>
+    <string name="menu_save">Save</string>
+    <string name="menu_library">Library</string>
+    <string name="menu_play">Play</string>
     <string name="flag">Flag</string>
     <string name="input_hint">File name</string>
     <string name="stop">Stop</string>
@@ -38,5 +43,17 @@
     <string name="fast_forward">Next</string>
     <string name="resume">Resume</string>
     <string name="failed_extraction">Failed to extract content from %s</string>
+    <string name="tts_failed">Text-to-speech Error</string>
+    <string name="cannot_install_tts_data">Sorry, Type and Speak was unable to install text-to-speech data.</string>
+    <string name="no_saved_speech">It looks like you haven\'t saved any speech.\n\nUse the save icon to save your speech.</string>
+    <string name="date_at_time">%1$s at %2$s</string>
+    <string name="more_content_description">More actions</string>
+    <string name="confirm_clear">Clear entered text?</string>
+    <string name="confirm_delete_message">Delete saved speech \"%s\"?</string>
+    <string name="no_text_entered">No text entered…</string>
+    <string name="cancel">Cancel</string>
+    <string name="save">Save</string>
+    <string name="clear">Clear</string>
+    <string name="delete">Delete</string>
 
 </resources>

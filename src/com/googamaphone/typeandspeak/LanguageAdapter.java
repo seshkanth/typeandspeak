@@ -60,7 +60,12 @@ public class LanguageAdapter extends ArrayAdapter<Locale> {
         textView.setText(displayName);
 
         final ImageView imageView = (ImageView) view.findViewById(mImageId);
-        imageView.setImageResource(drawableId);
+        if (drawableId <= 0) {
+            imageView.setVisibility(View.GONE);
+        } else {
+            imageView.setImageResource(drawableId);
+            imageView.setVisibility(View.VISIBLE);
+        }
     }
     
     private static CharSequence getDisplayNameForLocale(Context context, Locale locale) {
@@ -81,7 +86,7 @@ public class LanguageAdapter extends ArrayAdapter<Locale> {
      */
     private static int getFlagForLocale(Locale locale) {
         if (LOCALE_ADD_MORE.equals(locale)) {
-            return R.drawable.add_more;
+            return -1;
         }
         
         final String language = locale.getISO3Language();

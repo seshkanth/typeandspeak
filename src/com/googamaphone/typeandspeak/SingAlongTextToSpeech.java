@@ -49,6 +49,7 @@ public class SingAlongTextToSpeech {
         return mTts;
     }
 
+    @SuppressWarnings("deprecation")
     public void speak(CharSequence text) {
         mIsPaused = true;
 
@@ -91,6 +92,7 @@ public class SingAlongTextToSpeech {
         mTts.stop();
     }
 
+    @SuppressWarnings("deprecation")
     public void stop() {
         mIsPaused = true;
 
