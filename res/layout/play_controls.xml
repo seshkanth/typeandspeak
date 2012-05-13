@@ -8,7 +8,10 @@
         android:id="@+id/stop"
         android:layout_width="48dp"
         android:layout_height="48dp"
+        android:background="@drawable/state_selector_background"
+        android:clickable="true"
         android:contentDescription="@string/stop"
+        android:focusable="true"
         android:scaleType="center"
         android:src="@drawable/ic_media_stop" />
 
@@ -16,7 +19,10 @@
         android:id="@+id/pause"
         android:layout_width="48dp"
         android:layout_height="48dp"
+        android:background="@drawable/state_selector_background"
+        android:clickable="true"
         android:contentDescription="@string/pause"
+        android:focusable="true"
         android:scaleType="center"
         android:src="@drawable/ic_media_pause" />
 
@@ -24,7 +30,10 @@
         android:id="@+id/resume"
         android:layout_width="48dp"
         android:layout_height="48dp"
+        android:background="@drawable/state_selector_background"
+        android:clickable="true"
         android:contentDescription="@string/resume"
+        android:focusable="true"
         android:scaleType="center"
         android:src="@drawable/ic_media_play"
         android:visibility="gone" />
@@ -33,7 +42,10 @@
         android:id="@+id/rewind"
         android:layout_width="48dp"
         android:layout_height="48dp"
+        android:background="@drawable/state_selector_background"
+        android:clickable="true"
         android:contentDescription="@string/rewind"
+        android:focusable="true"
         android:scaleType="center"
         android:src="@drawable/ic_media_rew" />
 
@@ -41,7 +53,10 @@
         android:id="@+id/fast_forward"
         android:layout_width="48dp"
         android:layout_height="48dp"
+        android:background="@drawable/state_selector_background"
+        android:clickable="true"
         android:contentDescription="@string/fast_forward"
+        android:focusable="true"
         android:scaleType="center"
         android:src="@drawable/ic_media_ff" />
 

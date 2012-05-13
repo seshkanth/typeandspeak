@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<com.googamaphone.CheckableLinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="fill_parent"
-    android:layout_height="wrap_content" >
+    android:layout_height="wrap_content"
+    android:background="@drawable/state_selector_background" >
 
     <ImageView
         android:id="@+id/image"
@@ -21,4 +22,4 @@
         android:layout_margin="4dp"
         android:textColor="@android:color/primary_text_dark" />
 
-</LinearLayout>
+</com.googamaphone.CheckableLinearLayout>

@@ -1,34 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- android:drawable="@drawable/btn_dark_normal_disable" -->
-    <item android:state_enabled="false">
-        <shape>
-            <gradient
-                android:startColor="@color/button_dark_disable_top"
-                android:endColor="@color/button_dark_disable_bottom"
-                android:angle="270" />
-            <stroke
-                android:width="1dp"
-                android:color="@color/button_stroke" />
-            <corners
-                android:radius="2dp" />
-        </shape>
-    </item>
-
-    <!-- android:drawable="@drawable/btn_blue_normal" -->
-    <item android:state_enabled="true">
-        <shape>
-            <gradient
-                android:startColor="@color/button_blue_normal_top"
-                android:endColor="@color/button_blue_normal_bottom"
-                android:angle="270" />
-            <stroke
-                android:width="1dp"
-                android:color="@color/button_stroke" />
-            <corners
-                android:radius="2dp" />
-        </shape>
-    </item>
 
     <!-- android:drawable="@drawable/btn_dark_pressed" -->
     <item android:state_enabled="true" android:state_pressed="true">
@@ -42,6 +13,11 @@
                 android:color="@color/button_stroke" />
             <corners
                 android:radius="2dp" />
+            <padding
+                android:top="4dp"
+                android:bottom="4dp"
+                android:left="4dp"
+                android:right="4dp" />
         </shape>
     </item>
 
@@ -57,6 +33,51 @@
                 android:color="@color/button_stroke" />
             <corners
                 android:radius="2dp" />
+            <padding
+                android:top="4dp"
+                android:bottom="4dp"
+                android:left="4dp"
+                android:right="4dp" />
+        </shape>
+    </item>
+    
+    <!-- android:drawable="@drawable/btn_dark_normal_disable" -->
+    <item android:state_enabled="false">
+        <shape>
+            <gradient
+                android:startColor="@color/button_dark_disable_top"
+                android:endColor="@color/button_dark_disable_bottom"
+                android:angle="270" />
+            <stroke
+                android:width="1dp"
+                android:color="@color/button_stroke" />
+            <corners
+                android:radius="2dp" />
+            <padding
+                android:top="4dp"
+                android:bottom="4dp"
+                android:left="4dp"
+                android:right="4dp" />
+        </shape>
+    </item>
+
+    <!-- android:drawable="@drawable/btn_blue_normal" -->
+    <item android:state_enabled="true">
+        <shape>
+            <gradient
+                android:startColor="@color/button_blue_normal_top"
+                android:endColor="@color/button_blue_normal_bottom"
+                android:angle="270" />
+            <stroke
+                android:width="1dp"
+                android:color="@color/button_stroke" />
+            <corners
+                android:radius="2dp" />
+            <padding
+                android:top="4dp"
+                android:bottom="4dp"
+                android:left="4dp"
+                android:right="4dp" />
         </shape>
     </item>
 </selector>

@@ -8,10 +8,10 @@
         android:id="@+id/input_text"
         android:layout_width="fill_parent"
         android:layout_height="0dp"
-        android:layout_marginTop="5dp"
         android:layout_weight="1.0"
         android:gravity="top"
-        android:inputType="textMultiLine" >
+        android:inputType="textMultiLine"
+        android:imeOptions="flagNoEnterAction|actionNone" >
 
         <requestFocus />
     </EditText>
@@ -43,7 +43,10 @@
                 android:id="@+id/speak"
                 android:layout_width="48dp"
                 android:layout_height="48dp"
+                android:background="@drawable/state_selector_background"
+                android:clickable="true"
                 android:contentDescription="@string/menu_play"
+                android:focusable="true"
                 android:scaleType="center"
                 android:src="@drawable/ic_menu_play_clip" />
 
@@ -51,7 +54,10 @@
                 android:id="@+id/language"
                 android:layout_width="48dp"
                 android:layout_height="48dp"
+                android:background="@drawable/state_selector_background"
+                android:clickable="true"
                 android:contentDescription="@string/menu_language"
+                android:focusable="true"
                 android:scaleType="center"
                 android:src="@drawable/ic_menu_language" />
 
@@ -59,7 +65,10 @@
                 android:id="@+id/prefs"
                 android:layout_width="48dp"
                 android:layout_height="48dp"
+                android:background="@drawable/state_selector_background"
+                android:clickable="true"
                 android:contentDescription="@string/menu_properties"
+                android:focusable="true"
                 android:scaleType="center"
                 android:src="@drawable/ic_menu_preferences" />
 
@@ -67,7 +76,10 @@
                 android:id="@+id/write"
                 android:layout_width="48dp"
                 android:layout_height="48dp"
+                android:background="@drawable/state_selector_background"
+                android:clickable="true"
                 android:contentDescription="@string/menu_save"
+                android:focusable="true"
                 android:scaleType="center"
                 android:src="@drawable/ic_menu_save" />
 
@@ -75,7 +87,10 @@
                 android:id="@+id/clear"
                 android:layout_width="48dp"
                 android:layout_height="48dp"
+                android:background="@drawable/state_selector_background"
+                android:clickable="true"
                 android:contentDescription="@string/menu_clear"
+                android:focusable="true"
                 android:scaleType="center"
                 android:src="@drawable/ic_menu_delete" />
 
@@ -88,7 +103,10 @@
                 android:id="@+id/library"
                 android:layout_width="48dp"
                 android:layout_height="48dp"
+                android:background="@drawable/state_selector_background"
+                android:clickable="true"
                 android:contentDescription="@string/menu_library"
+                android:focusable="true"
                 android:scaleType="center"
                 android:src="@drawable/ic_menu_archive" />
         </LinearLayout>

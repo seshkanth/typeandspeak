@@ -19,7 +19,7 @@
     <application
         android:icon="@drawable/icon"
         android:label="@string/app_name"
-        android:theme="@android:style/Theme.Holo.Light" >
+        android:theme="@style/application_theme" >
         <activity
             android:name="TypeAndSpeak"
             android:label="@string/app_name"

@@ -4,6 +4,8 @@ package com.googamaphone.typeandspeak;
 import java.io.File;
 import java.io.IOException;
 
+import com.googamaphone.compat.AudioManagerCompatUtils;
+
 import android.annotation.TargetApi;
 import android.app.AlertDialog;
 import android.content.Context;
@@ -86,22 +88,13 @@ public class PlaybackDialog extends AlertDialog {
         
         manageAudioFocus(false);
     }
-    
-    private void manageAudioFocus(boolean gain) {
-        if (Build.VERSION.SDK_INT < 8) {
-            return;
-        }
-        
-        manageAudioFocusChecked(gain);
-    }
 
-    @TargetApi(8)
-    private void manageAudioFocusChecked(boolean gain) {
+    private void manageAudioFocus(boolean gain) {
         if (gain) {
-            mAudioManager.requestAudioFocus(null, AudioManager.STREAM_MUSIC,
-                    AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
+            AudioManagerCompatUtils.requestAudioFocus(mAudioManager, null,
+                    AudioManager.STREAM_MUSIC, AudioManagerCompatUtils.AUDIOFOCUS_GAIN_TRANSIENT);
         } else {
-            mAudioManager.abandonAudioFocus(null);
+            AudioManagerCompatUtils.abandonAudioFocus(mAudioManager, null);
         }
     }
 

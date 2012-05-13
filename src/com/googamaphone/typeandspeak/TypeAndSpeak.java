@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
-import android.annotation.TargetApi;
 import android.app.AlertDialog.Builder;
 import android.app.Dialog;
 import android.content.ActivityNotFoundException;
@@ -22,7 +21,6 @@ import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.graphics.Color;
 import android.media.AudioManager;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -40,6 +38,7 @@ import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager.LayoutParams;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
@@ -50,6 +49,7 @@ import android.widget.Toast;
 import com.googamaphone.GoogamaphoneActivity;
 import com.googamaphone.PinnedDialog;
 import com.googamaphone.PinnedDialogManager;
+import com.googamaphone.compat.AudioManagerCompatUtils;
 import com.googamaphone.typeandspeak.FileSynthesizer.FileSynthesizerListener;
 import com.googamaphone.typeandspeak.SingAlongTextToSpeech.SingAlongListener;
 
@@ -365,6 +365,8 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
             switch (id) {
                 case PINNED_LANGUAGES: {
                     ((ListView) dialog.findViewById(R.id.languages)).setSelection(mLocalePosition);
+                    ((ListView) dialog.findViewById(R.id.languages)).setItemChecked(
+                            mLocalePosition, true);
                     break;
                 }
                 case PINNED_PROPERTIES: {
@@ -510,20 +512,11 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
     }
 
     private void manageAudioFocus(boolean gain) {
-        if (Build.VERSION.SDK_INT < 8) {
-            return;
-        }
-
-        manageAudioFocusChecked(gain);
-    }
-
-    @TargetApi(8)
-    private void manageAudioFocusChecked(boolean gain) {
         if (gain) {
-            mAudioManager.requestAudioFocus(null, AudioManager.STREAM_MUSIC,
-                    AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
+            AudioManagerCompatUtils.requestAudioFocus(mAudioManager, null,
+                    AudioManager.STREAM_MUSIC, AudioManagerCompatUtils.AUDIOFOCUS_GAIN_TRANSIENT);
         } else {
-            mAudioManager.abandonAudioFocus(null);
+            AudioManagerCompatUtils.abandonAudioFocus(mAudioManager, null);
         }
     }
 
@@ -767,6 +760,7 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
     private class TypeAndSpeakHandler extends Handler {
         private static final int TTS_INITIALIZED = 1;
         private static final int DISMISS_DIALOG = 2;
+        private static final int REQUEST_INPUT_FOCUS = 3;
 
         @Override
         public void handleMessage(Message msg) {
@@ -776,6 +770,7 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
                     break;
                 case DISMISS_DIALOG:
                     mPinnedDialogManager.dismissPinnedDialog(msg.arg1);
+                    break;
             }
         }
 
