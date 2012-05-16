@@ -28,6 +28,8 @@
     <!-- Library item menu -->
     <string name="menu_delete">Delete</string>
     <string name="menu_share">Share</string>
+    <string name="menu_ringtone">Set as ringtone</string>
+    <string name="set_ringtone">Set ringtone</string>
 
     <!-- Main menu -->
     <string name="menu_language">Language</string>
@@ -50,6 +52,7 @@
     <string name="more_content_description">More actions</string>
     <string name="confirm_clear">Clear entered text?</string>
     <string name="confirm_delete_message">Delete saved speech \"%s\"?</string>
+    <string name="confirm_ringtone_message">Set default ringtone to \"%s\"?</string>
     <string name="no_text_entered">No text entered…</string>
     <string name="cancel">Cancel</string>
     <string name="save">Save</string>

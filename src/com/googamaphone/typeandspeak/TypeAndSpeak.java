@@ -2,6 +2,8 @@
 package com.googamaphone.typeandspeak;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -38,7 +40,6 @@ import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager.LayoutParams;
-import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
@@ -52,6 +53,9 @@ import com.googamaphone.PinnedDialogManager;
 import com.googamaphone.compat.AudioManagerCompatUtils;
 import com.googamaphone.typeandspeak.FileSynthesizer.FileSynthesizerListener;
 import com.googamaphone.typeandspeak.SingAlongTextToSpeech.SingAlongListener;
+
+import de.l3s.boilerpipe.BoilerpipeProcessingException;
+import de.l3s.boilerpipe.extractors.ArticleExtractor;
 
 public class TypeAndSpeak extends GoogamaphoneActivity {
     private static final String TAG = TypeAndSpeak.class.getSimpleName();
@@ -451,17 +455,20 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
             return;
         }
 
-        /*
-         * if (fromIntent && (text.startsWith("http://") ||
-         * text.startsWith("https://"))) { // TODO: Extract full URL from RSS
-         * items. try { final String extracted =
-         * ArticleExtractor.getInstance().getText(new URL(text)); if
-         * (TextUtils.isEmpty(extracted)) { text =
-         * getString(R.string.failed_extraction, text, text); } else { text =
-         * extracted; } } catch (final MalformedURLException e) {
-         * e.printStackTrace(); } catch (final BoilerpipeProcessingException e)
-         * { e.printStackTrace(); } }
-         */
+        if (fromIntent && (text.startsWith("http://") || text.startsWith("https://"))) {
+            try {
+                final String extracted = ArticleExtractor.getInstance().getText(new URL(text));
+                if (TextUtils.isEmpty(extracted)) {
+                    text = getString(R.string.failed_extraction, text, text);
+                } else {
+                    text = extracted;
+                }
+            } catch (final MalformedURLException e) {
+                e.printStackTrace();
+            } catch (final BoilerpipeProcessingException e) {
+                e.printStackTrace();
+            }
+        }
 
         mInputText.setText(text);
     }
@@ -760,7 +767,6 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
     private class TypeAndSpeakHandler extends Handler {
         private static final int TTS_INITIALIZED = 1;
         private static final int DISMISS_DIALOG = 2;
-        private static final int REQUEST_INPUT_FOCUS = 3;
 
         @Override
         public void handleMessage(Message msg) {
