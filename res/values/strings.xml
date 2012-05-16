@@ -58,5 +58,7 @@
     <string name="save">Save</string>
     <string name="clear">Clear</string>
     <string name="delete">Delete</string>
+    <string name="extracting_title">Please wait…</string>
+    <string name="extracting_message">Extracting text from URL.</string>
 
 </resources>

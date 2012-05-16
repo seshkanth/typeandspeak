@@ -11,6 +11,7 @@ import java.util.Set;
 
 import android.app.AlertDialog.Builder;
 import android.app.Dialog;
+import android.app.ProgressDialog;
 import android.content.ActivityNotFoundException;
 import android.content.ContentResolver;
 import android.content.ContentValues;
@@ -23,6 +24,7 @@ import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.graphics.Color;
 import android.media.AudioManager;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -72,6 +74,7 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
     // Dialog identifiers.
     private static final int DIALOG_INSTALL_DATA = 1;
     private static final int DIALOG_CANNOT_INSTALL_DATA = 2;
+    private static final int DIALOG_EXTRACTING_TEXT = 3;
 
     // Pinned dialog identifiers.
     private static final int PINNED_PROPERTIES = 1;
@@ -124,6 +127,9 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
     private int mLocalePosition;
     private int mPitch;
     private int mSpeed;
+    
+    // Extraction task.
+    private ExtractionTask mExtractionTask;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -239,7 +245,6 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
                         .setPositiveButton(android.R.string.ok, clickListener)
                         .setNegativeButton(android.R.string.no, null).create();
             }
-
             case DIALOG_CANNOT_INSTALL_DATA: {
                 return new Builder(this)
                         .setTitle(R.string.tts_failed)
@@ -251,6 +256,22 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
                                         finish();
                                     }
                                 }).create();
+            }
+            case DIALOG_EXTRACTING_TEXT: {
+                final ProgressDialog progressDialog = new ProgressDialog(this);
+                progressDialog.setCancelable(true);
+                progressDialog.setTitle(R.string.extracting_title);
+                progressDialog.setMessage(getString(R.string.extracting_message));
+                progressDialog.setIndeterminate(true);
+                progressDialog.setOnCancelListener(new DialogInterface.OnCancelListener() {
+                    @Override
+                    public void onCancel(DialogInterface dialog) {
+                        if (mExtractionTask != null) {
+                            mExtractionTask.cancel(true);
+                        }
+                    }
+                });
+                return progressDialog;
             }
         }
 
@@ -456,21 +477,54 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
         }
 
         if (fromIntent && (text.startsWith("http://") || text.startsWith("https://"))) {
+            mExtractionTask = new ExtractionTask() {
+                @Override
+                @SuppressWarnings("deprecation")
+                protected void onPreExecute() {
+                    showDialog(DIALOG_EXTRACTING_TEXT);
+                }
+
+                @SuppressWarnings("deprecation")
+                @Override
+                protected void onPostExecute(CharSequence result) {
+                    try {
+                        dismissDialog(DIALOG_EXTRACTING_TEXT);
+                    } catch (IllegalArgumentException e) {
+                        // Do nothing.
+                    }
+                    mInputText.setText(result);
+                }
+            };
+            mExtractionTask.execute(text);
+        } else {
+            mInputText.setText(text);
+        }
+    }
+    
+    private static class ExtractionTask extends AsyncTask<String, Void, CharSequence> {
+        @Override
+        protected CharSequence doInBackground(String... params) {
+            final StringBuilder output = new StringBuilder();
+            final ArticleExtractor extractor = ArticleExtractor.getInstance();
+            
             try {
-                final String extracted = ArticleExtractor.getInstance().getText(new URL(text));
-                if (TextUtils.isEmpty(extracted)) {
-                    text = getString(R.string.failed_extraction, text, text);
-                } else {
-                    text = extracted;
+                for (String param : params) {
+                    final URL url = new URL(param);
+                    final String extracted = extractor.getText(url);
+                    
+                    if (!TextUtils.isEmpty(extracted)) {
+                        output.append(extracted);
+                        output.append('\n');
+                    }
                 }
             } catch (final MalformedURLException e) {
                 e.printStackTrace();
             } catch (final BoilerpipeProcessingException e) {
                 e.printStackTrace();
             }
+            
+            return output;
         }
-
-        mInputText.setText(text);
     }
 
     /**
