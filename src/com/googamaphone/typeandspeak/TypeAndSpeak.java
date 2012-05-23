@@ -25,6 +25,7 @@ import android.content.pm.ResolveInfo;
 import android.graphics.Color;
 import android.media.AudioManager;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -228,7 +229,7 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
                                 final List<ResolveInfo> activities = pm.queryIntentActivities(
                                         intent, 0);
 
-                                if (activities.size() <= 0) {
+                                if ((activities == null) || activities.isEmpty()) {
                                     showDialog(DIALOG_CANNOT_INSTALL_DATA);
                                     break;
                                 }
@@ -476,7 +477,10 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
             return;
         }
 
-        if (fromIntent && (text.startsWith("http://") || text.startsWith("https://"))) {
+        // The extraction library depends on java.lang.String.getBytes(Charset),
+        // which is only available in SDK 9 and above.
+        if ((Build.VERSION.SDK_INT >= 9) && fromIntent
+                && (text.startsWith("http://") || text.startsWith("https://"))) {
             mExtractionTask = new ExtractionTask() {
                 @Override
                 @SuppressWarnings("deprecation")

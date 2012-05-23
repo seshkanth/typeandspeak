@@ -114,7 +114,7 @@ public class SingAlongTextToSpeech {
             return false;
         }
         
-        while ((steps < 0) && (mSegmentStart > 0)) {
+        while ((steps < 0) && (mSegmentStart > 0) && (mSegmentStart < mCurrentUnit.length())) {
             mSegmentEnd = mSegmentStart;
             mBreakIterator.preceding(mSegmentEnd);
             mSegmentStart = mBreakIterator.current();

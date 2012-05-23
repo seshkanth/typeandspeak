@@ -16,6 +16,7 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.provider.BaseColumns;
 import android.provider.MediaStore;
 import android.provider.MediaStore.Audio.AudioColumns;
@@ -381,13 +382,15 @@ public class LibraryActivity extends ListActivity {
         public Cursor doInBackground(Void... arg) {
             final String album = mContext.getString(R.string.album_name);
             final ContentResolver resolver = mContext.getContentResolver();
+            final String directory = Environment.getExternalStorageDirectory().getPath()
+                    + "/typeandspeak";
 
             final String[] projection = new String[] {
                     BaseColumns._ID, AudioColumns.TITLE, AudioColumns.DATA, AudioColumns.DATE_ADDED
             };
-            final String selection = AudioColumns.ALBUM + "=?";
+            final String selection = AudioColumns.ALBUM + "=? OR " + AudioColumns.DATA + " LIKE ?";
             final String[] args = new String[] {
-                album
+                album, directory + "/%"
             };
 
             return resolver.query(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, projection,

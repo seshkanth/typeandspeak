@@ -140,7 +140,7 @@ public class FileSynthesizer {
         }
 
         final String directory = Environment.getExternalStorageDirectory().getPath()
-                + "/media/audio";
+                + "/typeandspeak";
 
         final File outdir = new File(directory);
         final File outfile = new File(directory + "/" + filename + ".wav");
