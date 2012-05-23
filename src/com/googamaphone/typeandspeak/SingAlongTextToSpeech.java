@@ -3,6 +3,7 @@ package com.googamaphone.typeandspeak;
 
 import java.text.BreakIterator;
 import java.util.HashMap;
+import java.util.Locale;
 
 import android.content.Context;
 import android.os.Handler;
@@ -17,8 +18,8 @@ public class SingAlongTextToSpeech {
 
     private final TextToSpeech mTts;
     private final HashMap<String, String> mParams;
-    private final BreakIterator mBreakIterator;
-
+    
+    private BreakIterator mBreakIterator;
     private SingAlongListener mListener = null;
     private CharSequence mCurrentUnit = null;
     private int mCurrentId = 0;
@@ -32,13 +33,17 @@ public class SingAlongTextToSpeech {
      */
     private boolean mBypassAdvance = false;
 
-    public SingAlongTextToSpeech(Context context, TextToSpeech tts) {
+    public SingAlongTextToSpeech(Context context, TextToSpeech tts, Locale defaultLocale) {
         mTts = tts;
 
         mParams = new HashMap<String, String>();
         mParams.put(Engine.KEY_PARAM_UTTERANCE_ID, "SingAlongTTS");
 
-        mBreakIterator = BreakIterator.getSentenceInstance();
+        if (defaultLocale != null) { 
+            mBreakIterator = BreakIterator.getSentenceInstance(defaultLocale);
+        } else {
+            mBreakIterator = BreakIterator.getSentenceInstance(Locale.US);
+        }
     }
 
     public void setListener(SingAlongListener listener) {
@@ -47,6 +52,10 @@ public class SingAlongTextToSpeech {
 
     public TextToSpeech getTextToSpeech() {
         return mTts;
+    }
+    
+    public void setLocale(Locale locale) {
+        mBreakIterator = BreakIterator.getSentenceInstance(locale);
     }
 
     @SuppressWarnings("deprecation")

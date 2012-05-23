@@ -562,8 +562,10 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
         }
 
         if (mSingAlongTts == null) {
-            mSingAlongTts = new SingAlongTextToSpeech(this, mTts);
+            mSingAlongTts = new SingAlongTextToSpeech(this, mTts, mLocale);
             mSingAlongTts.setListener(mSingAlongListener);
+        } else {
+            mSingAlongTts.setLocale(mLocale);
         }
 
         if (mLocale != null) {
