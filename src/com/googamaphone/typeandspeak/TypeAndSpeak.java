@@ -57,9 +57,6 @@ import com.googamaphone.compat.AudioManagerCompatUtils;
 import com.googamaphone.typeandspeak.FileSynthesizer.FileSynthesizerListener;
 import com.googamaphone.typeandspeak.SingAlongTextToSpeech.SingAlongListener;
 
-import de.l3s.boilerpipe.BoilerpipeProcessingException;
-import de.l3s.boilerpipe.extractors.ArticleExtractor;
-
 public class TypeAndSpeak extends GoogamaphoneActivity {
     private static final String TAG = TypeAndSpeak.class.getSimpleName();
 
@@ -509,6 +506,7 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
         @Override
         protected CharSequence doInBackground(String... params) {
             final StringBuilder output = new StringBuilder();
+            /*
             final ArticleExtractor extractor = ArticleExtractor.getInstance();
             
             try {
@@ -526,7 +524,7 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
             } catch (final BoilerpipeProcessingException e) {
                 e.printStackTrace();
             }
-            
+            */
             return output;
         }
     }

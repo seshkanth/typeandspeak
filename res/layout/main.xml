@@ -30,86 +30,14 @@
         <include
             android:id="@+id/play_controls"
             android:layout_height="fill_parent"
+            android:layout_width="fill_parent"
             layout="@layout/play_controls"
             android:visibility="gone" />
 
-        <LinearLayout
-            android:id="@+id/default_controls"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal" >
-
-            <ImageView
-                android:id="@+id/speak"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:background="@drawable/state_selector_background"
-                android:clickable="true"
-                android:contentDescription="@string/menu_play"
-                android:focusable="true"
-                android:scaleType="center"
-                android:src="@drawable/ic_menu_play_clip" />
-
-            <ImageView
-                android:id="@+id/language"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:background="@drawable/state_selector_background"
-                android:clickable="true"
-                android:contentDescription="@string/menu_language"
-                android:focusable="true"
-                android:scaleType="center"
-                android:src="@drawable/ic_menu_language" />
-
-            <ImageView
-                android:id="@+id/prefs"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:background="@drawable/state_selector_background"
-                android:clickable="true"
-                android:contentDescription="@string/menu_properties"
-                android:focusable="true"
-                android:scaleType="center"
-                android:src="@drawable/ic_menu_preferences" />
-
-            <ImageView
-                android:id="@+id/write"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:background="@drawable/state_selector_background"
-                android:clickable="true"
-                android:contentDescription="@string/menu_save"
-                android:focusable="true"
-                android:scaleType="center"
-                android:src="@drawable/ic_menu_save" />
-
-            <ImageView
-                android:id="@+id/clear"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:background="@drawable/state_selector_background"
-                android:clickable="true"
-                android:contentDescription="@string/menu_clear"
-                android:focusable="true"
-                android:scaleType="center"
-                android:src="@drawable/ic_menu_delete" />
-
-            <View
-                android:layout_width="0dp"
-                android:layout_height="0dp"
-                android:layout_weight="1.0" />
-
-            <ImageView
-                android:id="@+id/library"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:background="@drawable/state_selector_background"
-                android:clickable="true"
-                android:contentDescription="@string/menu_library"
-                android:focusable="true"
-                android:scaleType="center"
-                android:src="@drawable/ic_menu_archive" />
-        </LinearLayout>
+        <include android:id="@+id/default_controls"
+            android:layout_height="fill_parent"
+            android:layout_width="fill_parent"
+            layout="@layout/default_controls" />
     </LinearLayout>
 
 </LinearLayout>
