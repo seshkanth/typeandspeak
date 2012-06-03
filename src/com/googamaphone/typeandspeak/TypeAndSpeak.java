@@ -32,9 +32,11 @@ import android.provider.MediaStore.MediaColumns;
 import android.provider.Settings;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.TextToSpeech.Engine;
+import android.text.Editable;
 import android.text.Spannable;
 import android.text.Spanned;
 import android.text.TextUtils;
+import android.text.TextWatcher;
 import android.text.style.BackgroundColorSpan;
 import android.text.style.CharacterStyle;
 import android.text.style.ForegroundColorSpan;
@@ -109,7 +111,7 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
     private AudioManager mAudioManager;
 
     /** Sing-along manager used to iterate through the edit text. */
-    private GranularTextToSpeech mSingAlongTts;
+    private GranularTextToSpeech mTtsWrapper;
 
     /** Synthesizer for writing speech to file. Lazily initialized. */
     private FileSynthesizer mSynth;
@@ -159,6 +161,10 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
 
         final SharedPreferences prefs = getPreferences(MODE_PRIVATE);
         mInputText.setText(prefs.getString(PREF_TEXT, ""));
+        mInputText.addTextChangedListener(mTextWatcher);
+
+        mTtsWrapper = new GranularTextToSpeech(this, mTts, mLocale);
+        mTtsWrapper.setListener(mSingAlongListener);
 
         // Load text from intent.
         onNewIntent(getIntent());
@@ -561,13 +567,8 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
             mHandler.dismissDialogDelayed(PINNED_NO_TEXT, 1000);
             return;
         }
-
-        if (mSingAlongTts == null) {
-            mSingAlongTts = new GranularTextToSpeech(this, mTts, mLocale);
-            mSingAlongTts.setListener(mSingAlongListener);
-        } else {
-            mSingAlongTts.setLocale(mLocale);
-        }
+        
+        mTtsWrapper.setLocale(mLocale);
 
         if (mLocale != null) {
             mTts.setLanguage(mLocale);
@@ -576,7 +577,9 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
         mTts.setPitch(mPitch / 50.0f);
         mTts.setSpeechRate(mSpeed / 50.0f);
 
-        mSingAlongTts.speak(text);
+        mTtsWrapper.setText(text);
+        mTtsWrapper.setSegmentFromCursor(mInputText.getSelectionStart());
+        mTtsWrapper.speak();
     }
 
     private void manageAudioFocus(boolean gain) {
@@ -765,23 +768,24 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
                     startActivity(new Intent(TypeAndSpeak.this, LibraryActivity.class));
                     break;
                 case R.id.stop:
-                    mSingAlongTts.stop();
+                    mTtsWrapper.stop();
                     break;
                 case R.id.pause:
-                    mSingAlongTts.pause();
+                    mTtsWrapper.pause();
                     mPauseButton.setVisibility(View.GONE);
                     mResumeButton.setVisibility(View.VISIBLE);
                     break;
                 case R.id.resume:
-                    mSingAlongTts.resume();
+                    mTtsWrapper.setSegmentFromCursor(mInputText.getSelectionStart());
+                    mTtsWrapper.resume();
                     mResumeButton.setVisibility(View.GONE);
                     mPauseButton.setVisibility(View.VISIBLE);
                     break;
                 case R.id.rewind:
-                    mSingAlongTts.previous();
+                    mTtsWrapper.previous();
                     break;
                 case R.id.fast_forward:
-                    mSingAlongTts.next();
+                    mTtsWrapper.next();
                     break;
             }
         }
@@ -789,22 +793,21 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
 
     private final SingAlongListener mSingAlongListener = new SingAlongListener() {
         @Override
-        public void onSequenceStarted(int id) {
+        public void onSequenceStarted() {
             mSpeakControls.setVisibility(View.VISIBLE);
             mDefaultControls.setVisibility(View.GONE);
             mPauseButton.setVisibility(View.VISIBLE);
             mResumeButton.setVisibility(View.GONE);
 
-            mInputText.setSelection(0, 0);
             manageAudioFocus(true);
         }
 
         @Override
-        public void onUnitSelected(int id, int start, int end) {
+        public void onUnitSelected(int start, int end) {
             if ((start < 0) || (end > mInputText.length())) {
                 // The text changed while we were speaking.
                 // TODO: We should be able to handle this.
-                mSingAlongTts.stop();
+                mTtsWrapper.stop();
                 return;
             }
 
@@ -816,7 +819,7 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
         }
 
         @Override
-        public void onSequenceCompleted(int id) {
+        public void onSequenceCompleted() {
             mInputText.setSelection(0, 0);
 
             final Spannable text = mInputText.getText();
@@ -826,6 +829,25 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
             mSpeakControls.setVisibility(View.GONE);
             mDefaultControls.setVisibility(View.VISIBLE);
             manageAudioFocus(false);
+        }
+    };
+    
+    private final TextWatcher mTextWatcher = new TextWatcher() {
+        @Override
+        public void onTextChanged(CharSequence s, int start, int before, int count) {
+            // Do nothing.
+        }
+        
+        @Override
+        public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+            // Do nothing.
+        }
+        
+        @Override
+        public void afterTextChanged(Editable s) {
+            if (mTtsWrapper.isSpeaking()) {
+                mTtsWrapper.setText(s);
+            }
         }
     };
 

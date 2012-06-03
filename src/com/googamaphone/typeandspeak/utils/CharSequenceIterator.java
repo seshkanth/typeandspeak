@@ -3,10 +3,8 @@ package com.googamaphone.typeandspeak.utils;
 
 import java.text.CharacterIterator;
 
-import android.text.TextUtils;
-
 public final class CharSequenceIterator implements CharacterIterator, Cloneable {
-    private final CharSequence mCharSequence;
+    private CharSequence mCharSequence;
 
     /** The current position. */
     private int mCursor;
@@ -19,6 +17,16 @@ public final class CharSequenceIterator implements CharacterIterator, Cloneable 
     public CharSequenceIterator(CharSequence charSequence) {
         mCharSequence = charSequence;
         mCursor = 0;
+    }
+    
+    public void setCharSequence(CharSequence charSequence) {
+        mCharSequence = charSequence;
+        
+        if (mCharSequence == null) {
+            mCursor = 0;
+        } else if (mCursor > mCharSequence.length()) {
+            mCursor = mCharSequence.length();
+        }
     }
 
     @Override
@@ -33,6 +41,10 @@ public final class CharSequenceIterator implements CharacterIterator, Cloneable 
 
     @Override
     public int getEndIndex() {
+        if (mCharSequence == null) {
+            return 0;
+        }
+
         return mCharSequence.length();
     }
 
@@ -43,25 +55,42 @@ public final class CharSequenceIterator implements CharacterIterator, Cloneable 
 
     @Override
     public char setIndex(int location) {
+        if ((mCursor < getBeginIndex()) || (mCursor > getEndIndex())) {
+            throw new IllegalArgumentException("Index out of bounds");
+        }
+
         mCursor = location;
+
         return current();
     }
 
     @Override
     public char next() {
-        mCursor++;
-        return current();
+        final int nextIndex = (getIndex() + 1);
+        
+        if (nextIndex > getEndIndex()) {
+            return CharacterIterator.DONE;
+        }
+
+        return setIndex(nextIndex);
     }
 
     @Override
     public char previous() {
-        mCursor--;
-        return current();
+        final int previousIndex = (getIndex() - 1);
+        
+        if (previousIndex < getBeginIndex()) {
+            return CharacterIterator.DONE;
+        }
+
+        return setIndex(previousIndex);
     }
 
     @Override
     public char current() {
-        if (getIndex() >= getEndIndex()) {
+        final int index = getIndex();
+        
+        if ((index < getBeginIndex()) || (index >= getEndIndex())) {
             return CharacterIterator.DONE;
         }
 
@@ -75,10 +104,12 @@ public final class CharSequenceIterator implements CharacterIterator, Cloneable 
 
     @Override
     public char last() {
-        if (TextUtils.isEmpty(mCharSequence)) {
-            return setIndex(getEndIndex());
+        final int lastIndex = (getEndIndex() - 1);
+        
+        if (lastIndex < getBeginIndex()) {
+            return CharacterIterator.DONE;
         }
 
-        return setIndex(getEndIndex() - 1);
+        return setIndex(lastIndex);
     }
 }

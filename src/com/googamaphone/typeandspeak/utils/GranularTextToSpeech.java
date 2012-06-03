@@ -5,12 +5,12 @@ import java.text.BreakIterator;
 import java.util.HashMap;
 import java.util.Locale;
 
-
 import android.content.Context;
 import android.os.Message;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.TextToSpeech.Engine;
 import android.speech.tts.TextToSpeech.OnUtteranceCompletedListener;
+import android.text.TextUtils;
 
 /**
  * A wrapper class for {@link TextToSpeech} that adds support for reading at a
@@ -20,6 +20,7 @@ public class GranularTextToSpeech {
     private static final int UTTERANCE_COMPLETED = 1;
     private static final int RESUME_SPEAKING = 2;
 
+    private final CharSequenceIterator mCharSequenceIterator = new CharSequenceIterator(null);
     private final TextToSpeech mTts;
     private final HashMap<String, String> mParams;
 
@@ -27,7 +28,6 @@ public class GranularTextToSpeech {
     private SingAlongListener mListener = null;
     private CharSequence mCurrentSequence = null;
 
-    private int mSequenceId = 0;
     private int mUnitEnd = 0;
     private int mUnitStart = 0;
 
@@ -62,26 +62,31 @@ public class GranularTextToSpeech {
 
     public void setLocale(Locale locale) {
         mBreakIterator = BreakIterator.getSentenceInstance(locale);
+
+        // Reset the text since we had to recreate the break iterator.
+        setText(mCurrentSequence);
     }
 
     @SuppressWarnings("deprecation")
-    public void speak(CharSequence text) {
+    public void speak() {
         mIsPaused = true;
 
         mTts.stop();
         mTts.setOnUtteranceCompletedListener(mOnUtteranceCompletedListener);
 
-        mSequenceId++;
-        mCurrentSequence = text;
-        mBreakIterator.setText(new CharSequenceIterator(mCurrentSequence));
-
         if (mListener != null) {
-            mListener.onSequenceStarted(mSequenceId);
+            mListener.onSequenceStarted();
         }
 
         mIsPaused = false;
 
         onUtteranceCompleted(null);
+    }
+
+    public void setText(CharSequence text) {
+        mCurrentSequence = text;
+        mCharSequenceIterator.setCharSequence(mCurrentSequence);
+        mBreakIterator.setText(mCharSequenceIterator);
     }
 
     public void pause() {
@@ -106,6 +111,28 @@ public class GranularTextToSpeech {
         mTts.stop();
     }
 
+    public boolean isSpeaking() {
+        return (mCurrentSequence != null);
+    }
+
+    public void setSegmentFromCursor(int cursor) {
+        if (mBreakIterator.isBoundary(cursor)) {
+            mUnitStart = mBreakIterator.current();
+            mBreakIterator.following(cursor);
+            mUnitEnd = mBreakIterator.current();
+        } else {
+            mUnitEnd = mBreakIterator.current();
+            mBreakIterator.preceding(cursor);
+            mUnitStart = mBreakIterator.current();
+        }
+
+        mBypassAdvance = true;
+
+        if (mListener != null) {
+            mListener.onUnitSelected(mUnitStart, mUnitEnd);
+        }
+    }
+
     @SuppressWarnings("deprecation")
     public void stop() {
         mIsPaused = true;
@@ -114,11 +141,11 @@ public class GranularTextToSpeech {
         mTts.setOnUtteranceCompletedListener(null);
 
         if (mListener != null) {
-            mListener.onSequenceCompleted(mSequenceId);
+            mListener.onSequenceCompleted();
         }
 
-        mSequenceId = -1;
-        mCurrentSequence = null;
+        setText(null);
+
         mUnitStart = 0;
         mUnitEnd = 0;
     }
@@ -137,17 +164,19 @@ public class GranularTextToSpeech {
             return false;
         }
 
-        final int result = mBreakIterator.following(mUnitStart);
+        do {
+            final int result = mBreakIterator.following(mUnitEnd);
 
-        if (result == BreakIterator.DONE) {
-            return false;
-        }
+            if (result == BreakIterator.DONE) {
+                return false;
+            }
 
-        mUnitStart = mUnitEnd;
-        mUnitEnd = mBreakIterator.current();
+            mUnitStart = mUnitEnd;
+            mUnitEnd = mBreakIterator.current();
+        } while (isWhitespace(mCurrentSequence.subSequence(mUnitStart, mUnitEnd)));
 
         if (mListener != null) {
-            mListener.onUnitSelected(mSequenceId, mUnitStart, mUnitEnd);
+            mListener.onUnitSelected(mUnitStart, mUnitEnd);
         }
 
         return true;
@@ -167,20 +196,26 @@ public class GranularTextToSpeech {
             return false;
         }
 
-        final int result = mBreakIterator.preceding(mUnitEnd);
+        do {
+            final int result = mBreakIterator.preceding(mUnitStart);
 
-        if (result == BreakIterator.DONE) {
-            return false;
-        }
+            if (result == BreakIterator.DONE) {
+                return false;
+            }
 
-        mUnitEnd = mUnitStart;
-        mUnitStart = mBreakIterator.current();
+            mUnitEnd = mUnitStart;
+            mUnitStart = mBreakIterator.current();
+        } while (isWhitespace(mCurrentSequence.subSequence(mUnitStart, mUnitEnd)));
 
         if (mListener != null) {
-            mListener.onUnitSelected(mSequenceId, mUnitStart, mUnitEnd);
+            mListener.onUnitSelected(mUnitStart, mUnitEnd);
         }
 
         return true;
+    }
+
+    private static boolean isWhitespace(CharSequence text) {
+        return TextUtils.getTrimmedLength(text) == 0;
     }
 
     private void onUtteranceCompleted(String utteranceId) {
@@ -248,10 +283,10 @@ public class GranularTextToSpeech {
     };
 
     public interface SingAlongListener {
-        public void onSequenceStarted(int id);
+        public void onSequenceStarted();
 
-        public void onUnitSelected(int id, int start, int end);
+        public void onUnitSelected(int start, int end);
 
-        public void onSequenceCompleted(int id);
+        public void onSequenceCompleted();
     }
 }
