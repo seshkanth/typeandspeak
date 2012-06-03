@@ -5,6 +5,8 @@ import java.io.File;
 import java.util.HashMap;
 import java.util.Locale;
 
+import com.googamaphone.typeandspeak.utils.ReferencedHandler;
+
 import android.app.AlertDialog;
 import android.app.AlertDialog.Builder;
 import android.app.ProgressDialog;

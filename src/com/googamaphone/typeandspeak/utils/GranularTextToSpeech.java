@@ -1,9 +1,10 @@
 
-package com.googamaphone.typeandspeak;
+package com.googamaphone.typeandspeak.utils;
 
 import java.text.BreakIterator;
 import java.util.HashMap;
 import java.util.Locale;
+
 
 import android.content.Context;
 import android.os.Message;
@@ -11,19 +12,25 @@ import android.speech.tts.TextToSpeech;
 import android.speech.tts.TextToSpeech.Engine;
 import android.speech.tts.TextToSpeech.OnUtteranceCompletedListener;
 
-public class SingAlongTextToSpeech {
+/**
+ * A wrapper class for {@link TextToSpeech} that adds support for reading at a
+ * given granularity level using a {@link BreakIterator}.
+ */
+public class GranularTextToSpeech {
     private static final int UTTERANCE_COMPLETED = 1;
     private static final int RESUME_SPEAKING = 2;
 
     private final TextToSpeech mTts;
     private final HashMap<String, String> mParams;
-    
+
     private BreakIterator mBreakIterator;
     private SingAlongListener mListener = null;
-    private CharSequence mCurrentUnit = null;
-    private int mCurrentId = 0;
-    private int mSegmentEnd = 0;
-    private int mSegmentStart = 0;
+    private CharSequence mCurrentSequence = null;
+
+    private int mSequenceId = 0;
+    private int mUnitEnd = 0;
+    private int mUnitStart = 0;
+
     private boolean mIsPaused = false;
 
     /**
@@ -32,13 +39,13 @@ public class SingAlongTextToSpeech {
      */
     private boolean mBypassAdvance = false;
 
-    public SingAlongTextToSpeech(Context context, TextToSpeech tts, Locale defaultLocale) {
+    public GranularTextToSpeech(Context context, TextToSpeech tts, Locale defaultLocale) {
         mTts = tts;
 
         mParams = new HashMap<String, String>();
         mParams.put(Engine.KEY_PARAM_UTTERANCE_ID, "SingAlongTTS");
 
-        if (defaultLocale != null) { 
+        if (defaultLocale != null) {
             mBreakIterator = BreakIterator.getSentenceInstance(defaultLocale);
         } else {
             mBreakIterator = BreakIterator.getSentenceInstance(Locale.US);
@@ -52,7 +59,7 @@ public class SingAlongTextToSpeech {
     public TextToSpeech getTextToSpeech() {
         return mTts;
     }
-    
+
     public void setLocale(Locale locale) {
         mBreakIterator = BreakIterator.getSentenceInstance(locale);
     }
@@ -61,16 +68,15 @@ public class SingAlongTextToSpeech {
     public void speak(CharSequence text) {
         mIsPaused = true;
 
-        // TODO: Handle current speech completion.
         mTts.stop();
         mTts.setOnUtteranceCompletedListener(mOnUtteranceCompletedListener);
 
-        mCurrentId++;
-        mCurrentUnit = text;
-        mBreakIterator.setText(new CharSequenceIterator(mCurrentUnit));
+        mSequenceId++;
+        mCurrentSequence = text;
+        mBreakIterator.setText(new CharSequenceIterator(mCurrentSequence));
 
         if (mListener != null) {
-            mListener.onUnitStarted(mCurrentId);
+            mListener.onSequenceStarted(mSequenceId);
         }
 
         mIsPaused = false;
@@ -85,17 +91,17 @@ public class SingAlongTextToSpeech {
 
     public void resume() {
         mIsPaused = false;
-        speakCurrentSegment();
+        speakCurrentUnit();
     }
 
     public void next() {
-        advanceBreakIterator(1);
+        nextInternal();
         mBypassAdvance = !mIsPaused;
         mTts.stop();
     }
 
     public void previous() {
-        advanceBreakIterator(-1);
+        previousInternal();
         mBypassAdvance = !mIsPaused;
         mTts.stop();
     }
@@ -108,51 +114,83 @@ public class SingAlongTextToSpeech {
         mTts.setOnUtteranceCompletedListener(null);
 
         if (mListener != null) {
-            mListener.onUnitCompleted(mCurrentId);
+            mListener.onSequenceCompleted(mSequenceId);
         }
 
-        mCurrentId = -1;
-        mCurrentUnit = null;
-        mSegmentStart = 0;
-        mSegmentEnd = 0;
+        mSequenceId = -1;
+        mCurrentSequence = null;
+        mUnitStart = 0;
+        mUnitEnd = 0;
     }
 
-    private boolean advanceBreakIterator(int steps) {
-        if (mCurrentUnit == null) {
+    /**
+     * Move the break iterator forward by one unit. If the cursor is in the
+     * middle of a unit, it will move to the next unit.
+     * 
+     * @return {@code true} if the iterator moved forward or {@code false} if it
+     *         already at the last unit.
+     */
+    private boolean nextInternal() {
+        if (mUnitStart >= mCurrentSequence.length()) {
+            // This happens if the current sequence changes without resetting
+            // the iterator.
             return false;
         }
-        
-        while ((steps < 0) && (mSegmentStart > 0) && (mSegmentStart < mCurrentUnit.length())) {
-            mSegmentEnd = mSegmentStart;
-            mBreakIterator.preceding(mSegmentEnd);
-            mSegmentStart = mBreakIterator.current();
 
-            steps++;
+        final int result = mBreakIterator.following(mUnitStart);
+
+        if (result == BreakIterator.DONE) {
+            return false;
         }
 
-        while ((steps > 0) && (mSegmentEnd < mCurrentUnit.length())) {
-            mSegmentStart = mSegmentEnd;
-            mBreakIterator.following(mSegmentStart);
-            mSegmentEnd = mBreakIterator.current();
-
-            steps--;
-        }
+        mUnitStart = mUnitEnd;
+        mUnitEnd = mBreakIterator.current();
 
         if (mListener != null) {
-            mListener.onSegmentStarted(mCurrentId, mSegmentStart, mSegmentEnd);
+            mListener.onUnitSelected(mSequenceId, mUnitStart, mUnitEnd);
         }
 
-        return (steps == 0);
+        return true;
+    }
+
+    /**
+     * Move the break iterator backward by one unit. If the cursor is in the
+     * middle of a unit, it will move to the beginning of the unit.
+     * 
+     * @return {@code true} if the iterator moved backward or {@code false} if
+     *         it already at the first unit.
+     */
+    private boolean previousInternal() {
+        if (mUnitEnd > mCurrentSequence.length()) {
+            // This happens if the current sequence changes without resetting
+            // the iterator.
+            return false;
+        }
+
+        final int result = mBreakIterator.preceding(mUnitEnd);
+
+        if (result == BreakIterator.DONE) {
+            return false;
+        }
+
+        mUnitEnd = mUnitStart;
+        mUnitStart = mBreakIterator.current();
+
+        if (mListener != null) {
+            mListener.onUnitSelected(mSequenceId, mUnitStart, mUnitEnd);
+        }
+
+        return true;
     }
 
     private void onUtteranceCompleted(String utteranceId) {
-        if (mCurrentUnit == null) {
+        if (mCurrentSequence == null) {
             // Shouldn't be speaking now.
             return;
         }
 
-        if (isUnitCompleted()) {
-            // TODO(alanv): Add support for more than one unit.
+        if (isSequenceCompleted()) {
+            // TODO(alanv): Add support for more than one sequence.
             stop();
             return;
         }
@@ -165,21 +203,23 @@ public class SingAlongTextToSpeech {
         if (mBypassAdvance) {
             mBypassAdvance = false;
         } else {
-            advanceBreakIterator(1);
+            nextInternal();
         }
 
-        speakCurrentSegment();
+        speakCurrentUnit();
     }
 
-    private void speakCurrentSegment() {
-        final CharSequence text = mCurrentUnit.subSequence(mSegmentStart, mSegmentEnd);
+    private void speakCurrentUnit() {
+        final CharSequence text = mCurrentSequence.subSequence(mUnitStart, mUnitEnd);
         mTts.speak(text.toString(), TextToSpeech.QUEUE_FLUSH, mParams);
     }
 
-    private boolean isUnitCompleted() {
-        return mSegmentEnd >= mCurrentUnit.length();
+    private boolean isSequenceCompleted() {
+        // TODO: Does this always work? What if the sequence ends with
+        // whitespace?
+        return mUnitEnd >= mCurrentSequence.length();
     }
-    
+
     private final SingAlongHandler mHandler = new SingAlongHandler(this);
 
     private final OnUtteranceCompletedListener mOnUtteranceCompletedListener = new OnUtteranceCompletedListener() {
@@ -189,13 +229,13 @@ public class SingAlongTextToSpeech {
         }
     };
 
-    private static class SingAlongHandler extends ReferencedHandler<SingAlongTextToSpeech> {
-        public SingAlongHandler(SingAlongTextToSpeech parent) {
+    private static class SingAlongHandler extends ReferencedHandler<GranularTextToSpeech> {
+        public SingAlongHandler(GranularTextToSpeech parent) {
             super(parent);
         }
 
         @Override
-        protected void handleMessage(Message msg, SingAlongTextToSpeech parent) {
+        protected void handleMessage(Message msg, GranularTextToSpeech parent) {
             switch (msg.what) {
                 case UTTERANCE_COMPLETED:
                     parent.onUtteranceCompleted((String) msg.obj);
@@ -208,10 +248,10 @@ public class SingAlongTextToSpeech {
     };
 
     public interface SingAlongListener {
-        public void onUnitStarted(int id);
+        public void onSequenceStarted(int id);
 
-        public void onSegmentStarted(int id, int start, int end);
+        public void onUnitSelected(int id, int start, int end);
 
-        public void onUnitCompleted(int id);
+        public void onSequenceCompleted(int id);
     }
 }

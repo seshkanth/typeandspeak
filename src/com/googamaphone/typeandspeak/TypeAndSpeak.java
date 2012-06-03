@@ -54,7 +54,9 @@ import com.googamaphone.PinnedDialog;
 import com.googamaphone.PinnedDialogManager;
 import com.googamaphone.compat.AudioManagerCompatUtils;
 import com.googamaphone.typeandspeak.FileSynthesizer.FileSynthesizerListener;
-import com.googamaphone.typeandspeak.SingAlongTextToSpeech.SingAlongListener;
+import com.googamaphone.typeandspeak.utils.GranularTextToSpeech;
+import com.googamaphone.typeandspeak.utils.ReferencedHandler;
+import com.googamaphone.typeandspeak.utils.GranularTextToSpeech.SingAlongListener;
 
 import de.l3s.boilerpipe.BoilerpipeProcessingException;
 import de.l3s.boilerpipe.extractors.ArticleExtractor;
@@ -107,7 +109,7 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
     private AudioManager mAudioManager;
 
     /** Sing-along manager used to iterate through the edit text. */
-    private SingAlongTextToSpeech mSingAlongTts;
+    private GranularTextToSpeech mSingAlongTts;
 
     /** Synthesizer for writing speech to file. Lazily initialized. */
     private FileSynthesizer mSynth;
@@ -561,7 +563,7 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
         }
 
         if (mSingAlongTts == null) {
-            mSingAlongTts = new SingAlongTextToSpeech(this, mTts, mLocale);
+            mSingAlongTts = new GranularTextToSpeech(this, mTts, mLocale);
             mSingAlongTts.setListener(mSingAlongListener);
         } else {
             mSingAlongTts.setLocale(mLocale);
@@ -787,7 +789,7 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
 
     private final SingAlongListener mSingAlongListener = new SingAlongListener() {
         @Override
-        public void onUnitStarted(int id) {
+        public void onSequenceStarted(int id) {
             mSpeakControls.setVisibility(View.VISIBLE);
             mDefaultControls.setVisibility(View.GONE);
             mPauseButton.setVisibility(View.VISIBLE);
@@ -798,7 +800,7 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
         }
 
         @Override
-        public void onSegmentStarted(int id, int start, int end) {
+        public void onUnitSelected(int id, int start, int end) {
             if ((start < 0) || (end > mInputText.length())) {
                 // The text changed while we were speaking.
                 // TODO: We should be able to handle this.
@@ -814,7 +816,7 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
         }
 
         @Override
-        public void onUnitCompleted(int id) {
+        public void onSequenceCompleted(int id) {
             mInputText.setSelection(0, 0);
 
             final Spannable text = mInputText.getText();

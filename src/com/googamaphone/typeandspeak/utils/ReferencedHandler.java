@@ -1,4 +1,4 @@
-package com.googamaphone.typeandspeak;
+package com.googamaphone.typeandspeak.utils;
 
 import java.lang.ref.WeakReference;
 

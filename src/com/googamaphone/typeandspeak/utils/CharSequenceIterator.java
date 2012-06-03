@@ -1,5 +1,5 @@
 
-package com.googamaphone.typeandspeak;
+package com.googamaphone.typeandspeak.utils;
 
 import java.text.CharacterIterator;
 

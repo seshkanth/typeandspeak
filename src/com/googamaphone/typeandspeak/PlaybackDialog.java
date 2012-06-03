@@ -19,6 +19,7 @@ import android.widget.SeekBar;
 import android.widget.SeekBar.OnSeekBarChangeListener;
 
 import com.googamaphone.compat.AudioManagerCompatUtils;
+import com.googamaphone.typeandspeak.utils.ReferencedHandler;
 
 public class PlaybackDialog extends AlertDialog {
     private final MediaPlayer mMediaPlayer;
