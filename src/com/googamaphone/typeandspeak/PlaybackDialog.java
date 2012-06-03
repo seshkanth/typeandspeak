@@ -11,7 +11,6 @@ import android.content.Intent;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.net.Uri;
-import android.os.Handler;
 import android.os.Message;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -23,7 +22,6 @@ import com.googamaphone.compat.AudioManagerCompatUtils;
 
 public class PlaybackDialog extends AlertDialog {
     private final MediaPlayer mMediaPlayer;
-    private final MediaPoller mPoller;
     private final View mContentView;
     private final SeekBar mProgress;
     private final ImageButton mPlayButton;
@@ -47,8 +45,6 @@ public class PlaybackDialog extends AlertDialog {
         mMediaPlayer = new MediaPlayer();
         mMediaPlayer.setOnPreparedListener(mOnPreparedListener);
         mMediaPlayer.setOnCompletionListener(mOnCompletionListener);
-
-        mPoller = new MediaPoller();
 
         mContentView = LayoutInflater.from(context).inflate(R.layout.playback, null);
 
@@ -110,6 +106,8 @@ public class PlaybackDialog extends AlertDialog {
         mMediaPlayer.setDataSource(mSavedFile.getAbsolutePath());
         mMediaPlayer.prepare();
     }
+
+    private final MediaPoller mPoller = new MediaPoller(this);
 
     private final MediaPlayer.OnCompletionListener mOnCompletionListener = new MediaPlayer.OnCompletionListener() {
         @Override
@@ -203,19 +201,23 @@ public class PlaybackDialog extends AlertDialog {
         }
     };
 
-    private class MediaPoller extends Handler {
+    private static class MediaPoller extends ReferencedHandler<PlaybackDialog> {
         private static final int MSG_CHECK_PROGRESS = 1;
 
         private boolean mStopPolling;
 
+        public MediaPoller(PlaybackDialog parent) {
+            super(parent);
+        }
+
         @Override
-        public void handleMessage(Message msg) {
+        protected void handleMessage(Message msg, PlaybackDialog parent) {
             switch (msg.what) {
                 case MSG_CHECK_PROGRESS:
-                    if (!mStopPolling && mMediaPlayer.isPlaying()) {
-                        if (mAdvanceSeekBar) {
-                            mProgress.setMax(mMediaPlayer.getDuration());
-                            mProgress.setProgress(mMediaPlayer.getCurrentPosition());
+                    if (!mStopPolling && parent.mMediaPlayer.isPlaying()) {
+                        if (parent.mAdvanceSeekBar) {
+                            parent.mProgress.setMax(parent.mMediaPlayer.getDuration());
+                            parent.mProgress.setProgress(parent.mMediaPlayer.getCurrentPosition());
                         }
 
                         startPolling();

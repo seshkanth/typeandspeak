@@ -99,14 +99,16 @@ public class PinnedDialog {
      * {@link SimpleOverlayListener#onHide(SimpleOverlay)} if available.
      */
     public final void show(View pinnedView) {
-        if (mVisible) {
-            return;
+        synchronized (this) {
+            if (mVisible) {
+                return;
+            }
+    
+            mPinnedView = pinnedView;
+            mWindowView.getViewTreeObserver().addOnGlobalLayoutListener(mOnGlobalLayoutListener);
+            mWindowManager.addView(mWindowView, mParams);
+            mVisible = true;
         }
-
-        mPinnedView = pinnedView;
-        mWindowView.getViewTreeObserver().addOnGlobalLayoutListener(mOnGlobalLayoutListener);
-        mWindowManager.addView(mWindowView, mParams);
-        mVisible = true;
     }
 
     public View getPinnedView() {
@@ -118,14 +120,16 @@ public class PinnedDialog {
      * {@link SimpleOverlayListener#onHide(SimpleOverlay)} if available.
      */
     public final void dismiss() {
-        if (!mVisible) {
-            return;
+        synchronized (this) {
+            if (!mVisible) {
+                return;
+            }
+    
+            mPinnedView = null;
+            mWindowView.getViewTreeObserver().removeGlobalOnLayoutListener(mOnGlobalLayoutListener);
+            mWindowManager.removeViewImmediate(mWindowView);
+            mVisible = false;
         }
-
-        mPinnedView = null;
-        mWindowView.getViewTreeObserver().removeGlobalOnLayoutListener(mOnGlobalLayoutListener);
-        mWindowManager.removeViewImmediate(mWindowView);
-        mVisible = false;
     }
 
     /**
@@ -145,8 +149,10 @@ public class PinnedDialog {
     public void setParams(LayoutParams params) {
         mParams.copyFrom(params);
 
-        if (mVisible) {
-            mWindowManager.updateViewLayout(mWindowView, mParams);
+        synchronized (this) {
+            if (mVisible) {
+                mWindowManager.updateViewLayout(mWindowView, mParams);
+            }
         }
     }
 
@@ -172,6 +178,11 @@ public class PinnedDialog {
     public static final int BELOW = 0x2;
 
     private void updatePinningOffset() {
+        if (mWindowView.getWindowVisibility() != View.VISIBLE) {
+            dismiss();
+            return;
+        }
+
         final int width = mWindowView.getWidth();
         final int height = mWindowView.getHeight();
         final LayoutParams params = getParams();

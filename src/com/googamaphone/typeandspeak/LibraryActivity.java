@@ -11,7 +11,6 @@ import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
-import android.media.RingtoneManager;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
@@ -46,7 +45,6 @@ public class LibraryActivity extends ListActivity {
 
     private static final int PINNED_ACTIONS = 1;
     private static final int PINNED_CONFIRM_DELETE = 2;
-    private static final int PINNED_CONFIRM_RINGTONE = 3;
 
     private static final String KEY_POSITION = "position";
 
@@ -119,13 +117,6 @@ public class LibraryActivity extends ListActivity {
                     dialog.findViewById(R.id.cancel_delete).setOnClickListener(mOnClickListener);
                     return dialog;
                 }
-                case PINNED_CONFIRM_RINGTONE: {
-                    final PinnedDialog dialog = new PinnedDialog(LibraryActivity.this)
-                            .setContentView(R.layout.pinned_confirm_ringtone);
-                    dialog.findViewById(R.id.confirm_ringtone).setOnClickListener(mOnClickListener);
-                    dialog.findViewById(R.id.cancel_ringtone).setOnClickListener(mOnClickListener);
-                    return dialog;
-                }
             }
 
             return super.onCreatePinnedDialog(id);
@@ -155,22 +146,6 @@ public class LibraryActivity extends ListActivity {
 
                     ((TextView) dialog.findViewById(R.id.message)).setText(getString(
                             R.string.confirm_delete_message, title));
-                    break;
-                }
-                case PINNED_CONFIRM_RINGTONE: {
-                    new Exception().printStackTrace();
-                    final int position = arguments.getInt(KEY_POSITION);
-                    dialog.findViewById(R.id.confirm_ringtone).setTag(R.id.tag_position, position);
-                    dialog.findViewById(R.id.cancel_ringtone).setTag(R.id.tag_position, position);
-
-                    final Cursor cursor = mCursorAdapter.getCursor();
-                    cursor.moveToPosition(position);
-
-                    final int titleIndex = cursor.getColumnIndex(AudioColumns.TITLE);
-                    final String title = cursor.getString(titleIndex);
-
-                    ((TextView) dialog.findViewById(R.id.message)).setText(getString(
-                            R.string.confirm_ringtone_message, title));
                     break;
                 }
                 default: {
@@ -204,28 +179,7 @@ public class LibraryActivity extends ListActivity {
                     break;
                 }
                 case R.id.ringtone: {
-                    final View pinnedView = mPinnedDialogManager.getPinnedView(PINNED_ACTIONS);
-
-                    mPinnedDialogManager.dismissPinnedDialog(PINNED_ACTIONS);
-
-                    final Bundle arguments = new Bundle();
-                    arguments.putInt(KEY_POSITION, position);
-                    mPinnedDialogManager.showPinnedDialog(PINNED_CONFIRM_RINGTONE, pinnedView,
-                            arguments);
-                    break;
-                }
-                case R.id.confirm_ringtone: {
-                    mPinnedDialogManager.dismissPinnedDialog(PINNED_CONFIRM_RINGTONE);
-
-                    final Cursor cursor = mCursorAdapter.getCursor();
-                    cursor.moveToPosition(position);
-
-                    final int idIndex = cursor.getColumnIndex(AudioColumns._ID);
-                    final long id = cursor.getLong(idIndex);
-                    final Uri mediaUri = Uri.withAppendedPath(Media.EXTERNAL_CONTENT_URI, "" + id);
-
-                    RingtoneManager.setActualDefaultRingtoneUri(LibraryActivity.this,
-                            RingtoneManager.TYPE_RINGTONE, mediaUri);
+                    startActivity(new Intent("android.settings.SOUND_SETTINGS"));
                     break;
                 }
                 case R.id.confirm_delete: {

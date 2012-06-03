@@ -27,7 +27,6 @@ import android.media.AudioManager;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Handler;
 import android.os.Message;
 import android.provider.MediaStore.MediaColumns;
 import android.provider.Settings;
@@ -56,6 +55,9 @@ import com.googamaphone.PinnedDialogManager;
 import com.googamaphone.compat.AudioManagerCompatUtils;
 import com.googamaphone.typeandspeak.FileSynthesizer.FileSynthesizerListener;
 import com.googamaphone.typeandspeak.SingAlongTextToSpeech.SingAlongListener;
+
+import de.l3s.boilerpipe.BoilerpipeProcessingException;
+import de.l3s.boilerpipe.extractors.ArticleExtractor;
 
 public class TypeAndSpeak extends GoogamaphoneActivity {
     private static final String TAG = TypeAndSpeak.class.getSimpleName();
@@ -93,7 +95,7 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
     private final HashMap<String, String> mParams = new HashMap<String, String>();
 
     /** Handler used for transferring TTS callbacks to the main thread. */
-    private final TypeAndSpeakHandler mHandler = new TypeAndSpeakHandler();
+    private final TypeAndSpeakHandler mHandler = new TypeAndSpeakHandler(this);
 
     /** Default text-to-speech engine. */
     private String mTtsEngine;
@@ -125,7 +127,7 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
     private int mLocalePosition;
     private int mPitch;
     private int mSpeed;
-    
+
     // Extraction task.
     private ExtractionTask mExtractionTask;
 
@@ -501,19 +503,18 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
             mInputText.setText(text);
         }
     }
-    
+
     private static class ExtractionTask extends AsyncTask<String, Void, CharSequence> {
         @Override
         protected CharSequence doInBackground(String... params) {
             final StringBuilder output = new StringBuilder();
-            /*
             final ArticleExtractor extractor = ArticleExtractor.getInstance();
-            
+
             try {
                 for (String param : params) {
                     final URL url = new URL(param);
                     final String extracted = extractor.getText(url);
-                    
+
                     if (!TextUtils.isEmpty(extracted)) {
                         output.append(extracted);
                         output.append('\n');
@@ -524,7 +525,7 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
             } catch (final BoilerpipeProcessingException e) {
                 e.printStackTrace();
             }
-            */
+
             return output;
         }
     }
@@ -628,7 +629,7 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
         mLanguagesAdapter.setDropDownViewResource(R.layout.language_dropdown);
         mLanguagesAdapter.clear();
 
-        final String preferredLocale = mLocale.toString();
+        final String preferredLocale = ((mLocale == null) ? null : mLocale.toString());
         int preferredSelection = 0;
 
         // Add the available locales to the adapter, watching for the preferred
@@ -798,6 +799,13 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
 
         @Override
         public void onSegmentStarted(int id, int start, int end) {
+            if ((start < 0) || (end > mInputText.length())) {
+                // The text changed while we were speaking.
+                // TODO: We should be able to handle this.
+                mSingAlongTts.stop();
+                return;
+            }
+
             mInputText.setSelection(start, start);
 
             final Spannable text = mInputText.getText();
@@ -822,18 +830,22 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
     /**
      * Transfers callbacks to the main thread.
      */
-    private class TypeAndSpeakHandler extends Handler {
+    private static class TypeAndSpeakHandler extends ReferencedHandler<TypeAndSpeak> {
         private static final int TTS_INITIALIZED = 1;
         private static final int DISMISS_DIALOG = 2;
 
+        public TypeAndSpeakHandler(TypeAndSpeak parent) {
+            super(parent);
+        }
+
         @Override
-        public void handleMessage(Message msg) {
+        protected void handleMessage(Message msg, TypeAndSpeak parent) {
             switch (msg.what) {
                 case TTS_INITIALIZED:
-                    onTtsInitialized(msg.arg1);
+                    parent.onTtsInitialized(msg.arg1);
                     break;
                 case DISMISS_DIALOG:
-                    mPinnedDialogManager.dismissPinnedDialog(msg.arg1);
+                    parent.mPinnedDialogManager.dismissPinnedDialog(msg.arg1);
                     break;
             }
         }

@@ -6,7 +6,6 @@ import java.util.HashMap;
 import java.util.Locale;
 
 import android.content.Context;
-import android.os.Handler;
 import android.os.Message;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.TextToSpeech.Engine;
@@ -180,25 +179,31 @@ public class SingAlongTextToSpeech {
     private boolean isUnitCompleted() {
         return mSegmentEnd >= mCurrentUnit.length();
     }
-
-    private final Handler mHandler = new Handler() {
-        @Override
-        public void handleMessage(Message msg) {
-            switch (msg.what) {
-                case UTTERANCE_COMPLETED:
-                    onUtteranceCompleted((String) msg.obj);
-                    break;
-                case RESUME_SPEAKING:
-                    resume();
-                    break;
-            }
-        }
-    };
+    
+    private final SingAlongHandler mHandler = new SingAlongHandler(this);
 
     private final OnUtteranceCompletedListener mOnUtteranceCompletedListener = new OnUtteranceCompletedListener() {
         @Override
         public void onUtteranceCompleted(String utteranceId) {
             mHandler.obtainMessage(UTTERANCE_COMPLETED, utteranceId).sendToTarget();
+        }
+    };
+
+    private static class SingAlongHandler extends ReferencedHandler<SingAlongTextToSpeech> {
+        public SingAlongHandler(SingAlongTextToSpeech parent) {
+            super(parent);
+        }
+
+        @Override
+        protected void handleMessage(Message msg, SingAlongTextToSpeech parent) {
+            switch (msg.what) {
+                case UTTERANCE_COMPLETED:
+                    parent.onUtteranceCompleted((String) msg.obj);
+                    break;
+                case RESUME_SPEAKING:
+                    parent.resume();
+                    break;
+            }
         }
     };
 

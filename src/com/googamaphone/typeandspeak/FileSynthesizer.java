@@ -15,7 +15,6 @@ import android.content.DialogInterface;
 import android.content.DialogInterface.OnCancelListener;
 import android.net.Uri;
 import android.os.Environment;
-import android.os.Handler;
 import android.os.Message;
 import android.provider.MediaStore.Audio.AudioColumns;
 import android.provider.MediaStore.Audio.Media;
@@ -198,17 +197,8 @@ public class FileSynthesizer {
             e.printStackTrace();
         }
     }
-
-    private final Handler mHandler = new Handler() {
-        @Override
-        public void handleMessage(Message msg) {
-            switch (msg.what) {
-                case UTTERANCE_COMPLETED:
-                    onUtteranceCompleted((String) msg.obj);
-                    break;
-            }
-        }
-    };
+    
+    private SynthesizerHandler mHandler = new SynthesizerHandler(this);
 
     private final TextToSpeech.OnUtteranceCompletedListener mOnUtteranceCompletedListener = new TextToSpeech.OnUtteranceCompletedListener() {
         @Override
@@ -224,6 +214,21 @@ public class FileSynthesizer {
             mTts.stop();
         }
     };
+    
+    private static class SynthesizerHandler extends ReferencedHandler<FileSynthesizer> {
+        public SynthesizerHandler(FileSynthesizer parent) {
+            super(parent);
+        }
+
+        @Override
+        protected void handleMessage(Message msg, FileSynthesizer parent) {
+            switch (msg.what) {
+                case UTTERANCE_COMPLETED:
+                    parent.onUtteranceCompleted((String) msg.obj);
+                    break;
+            }
+        }
+    }
 
     public interface FileSynthesizerListener {
         public void onFileSynthesized(ContentValues contentValues);
