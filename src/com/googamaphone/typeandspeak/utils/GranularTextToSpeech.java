@@ -116,6 +116,8 @@ public class GranularTextToSpeech {
     }
 
     public void setSegmentFromCursor(int cursor) {
+        cursor = Math.min(Math.max(0, cursor), mCurrentSequence.length());
+
         if (mBreakIterator.isBoundary(cursor)) {
             mUnitStart = mBreakIterator.current();
             mBreakIterator.following(cursor);
@@ -224,12 +226,6 @@ public class GranularTextToSpeech {
             return;
         }
 
-        if (isSequenceCompleted()) {
-            // TODO(alanv): Add support for more than one sequence.
-            stop();
-            return;
-        }
-
         if (mIsPaused) {
             // Don't move to the next segment if paused.
             return;
@@ -237,8 +233,9 @@ public class GranularTextToSpeech {
 
         if (mBypassAdvance) {
             mBypassAdvance = false;
-        } else {
-            nextInternal();
+        } else if (!nextInternal()) {
+            stop();
+            return;
         }
 
         speakCurrentUnit();
@@ -247,12 +244,6 @@ public class GranularTextToSpeech {
     private void speakCurrentUnit() {
         final CharSequence text = mCurrentSequence.subSequence(mUnitStart, mUnitEnd);
         mTts.speak(text.toString(), TextToSpeech.QUEUE_FLUSH, mParams);
-    }
-
-    private boolean isSequenceCompleted() {
-        // TODO: Does this always work? What if the sequence ends with
-        // whitespace?
-        return mUnitEnd >= mCurrentSequence.length();
     }
 
     private final SingAlongHandler mHandler = new SingAlongHandler(this);
