@@ -2,7 +2,6 @@
 package com.googamaphone.typeandspeak;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.List;
@@ -22,7 +21,6 @@ import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
-import android.graphics.Color;
 import android.media.AudioManager;
 import android.os.AsyncTask;
 import android.os.Build;
@@ -33,13 +31,8 @@ import android.provider.Settings;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.TextToSpeech.Engine;
 import android.text.Editable;
-import android.text.Spannable;
-import android.text.Spanned;
 import android.text.TextUtils;
 import android.text.TextWatcher;
-import android.text.style.BackgroundColorSpan;
-import android.text.style.CharacterStyle;
-import android.text.style.ForegroundColorSpan;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewGroup;
@@ -57,10 +50,9 @@ import com.googamaphone.PinnedDialogManager;
 import com.googamaphone.compat.AudioManagerCompatUtils;
 import com.googamaphone.typeandspeak.FileSynthesizer.FileSynthesizerListener;
 import com.googamaphone.typeandspeak.utils.GranularTextToSpeech;
-import com.googamaphone.typeandspeak.utils.ReferencedHandler;
 import com.googamaphone.typeandspeak.utils.GranularTextToSpeech.SingAlongListener;
+import com.googamaphone.typeandspeak.utils.ReferencedHandler;
 
-import de.l3s.boilerpipe.BoilerpipeProcessingException;
 import de.l3s.boilerpipe.extractors.ArticleExtractor;
 
 public class TypeAndSpeak extends GoogamaphoneActivity {
@@ -90,10 +82,6 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
     // Activity request identifiers.
     private static final int REQUEST_CHECK_DATA = 1;
     private static final int REQUEST_INSTALL_DATA = 2;
-
-    // Sing-along colors.
-    private static final CharacterStyle FOREGROUND_SPAN = new ForegroundColorSpan(Color.BLACK);
-    private static final CharacterStyle BACKGROUND_SPAN = new BackgroundColorSpan(Color.YELLOW);
 
     /** Speech parameters. */
     private final HashMap<String, String> mParams = new HashMap<String, String>();
@@ -255,15 +243,15 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
             }
             case DIALOG_CANNOT_INSTALL_DATA: {
                 return new Builder(this)
-                        .setTitle(R.string.tts_failed)
-                        .setMessage(R.string.cannot_install_tts_data)
-                        .setPositiveButton(android.R.string.ok,
-                                new DialogInterface.OnClickListener() {
-                                    @Override
-                                    public void onClick(DialogInterface dialog, int which) {
-                                        finish();
-                                    }
-                                }).create();
+                .setTitle(R.string.tts_failed)
+                .setMessage(R.string.cannot_install_tts_data)
+                .setPositiveButton(android.R.string.ok,
+                        new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        finish();
+                    }
+                }).create();
             }
             case DIALOG_EXTRACTING_TEXT: {
                 final ProgressDialog progressDialog = new ProgressDialog(this);
@@ -292,7 +280,7 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
             switch (id) {
                 case PINNED_CONFIRM_CLEAR: {
                     final PinnedDialog dialog = new PinnedDialog(TypeAndSpeak.this)
-                            .setContentView(R.layout.pinned_confirm_clear);
+                    .setContentView(R.layout.pinned_confirm_clear);
 
                     final View.OnClickListener clickListener = new View.OnClickListener() {
                         @Override
@@ -313,11 +301,11 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
                 }
                 case PINNED_NO_TEXT: {
                     return new PinnedDialog(TypeAndSpeak.this)
-                            .setContentView(R.layout.pinned_no_text);
+                    .setContentView(R.layout.pinned_no_text);
                 }
                 case PINNED_LANGUAGES: {
                     final PinnedDialog dialog = new PinnedDialog(TypeAndSpeak.this)
-                            .setContentView(R.layout.pinned_languages);
+                    .setContentView(R.layout.pinned_languages);
 
                     final ListView listView = (ListView) dialog.findViewById(R.id.languages);
                     listView.setAdapter(mLanguagesAdapter);
@@ -336,18 +324,18 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
                 }
                 case PINNED_PROPERTIES: {
                     final PinnedDialog dialog = new PinnedDialog(TypeAndSpeak.this)
-                            .setContentView(R.layout.pinned_properties);
+                    .setContentView(R.layout.pinned_properties);
 
                     ((SeekBar) dialog.findViewById(R.id.seekPitch))
-                            .setOnSeekBarChangeListener(mSeekListener);
+                    .setOnSeekBarChangeListener(mSeekListener);
                     ((SeekBar) dialog.findViewById(R.id.seekSpeed))
-                            .setOnSeekBarChangeListener(mSeekListener);
+                    .setOnSeekBarChangeListener(mSeekListener);
 
                     return dialog;
                 }
                 case PINNED_SAVE: {
                     final PinnedDialog dialog = new PinnedDialog(TypeAndSpeak.this)
-                            .setContentView(R.layout.pinned_save);
+                    .setContentView(R.layout.pinned_save);
                     final EditText editText = (EditText) dialog.findViewById(R.id.input);
                     final View confirmSave = dialog.findViewById(R.id.confirm_save);
 
@@ -528,9 +516,7 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
                         output.append('\n');
                     }
                 }
-            } catch (final MalformedURLException e) {
-                e.printStackTrace();
-            } catch (final BoilerpipeProcessingException e) {
+            } catch (final Exception e) {
                 e.printStackTrace();
             }
 
@@ -567,7 +553,7 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
             mHandler.dismissDialogDelayed(PINNED_NO_TEXT, 1000);
             return;
         }
-        
+
         mTtsWrapper.setLocale(mLocale);
 
         if (mLocale != null) {
@@ -811,38 +797,30 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
                 return;
             }
 
-            mInputText.setSelection(start, start);
-
-            final Spannable text = mInputText.getText();
-            text.setSpan(FOREGROUND_SPAN, start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-            text.setSpan(BACKGROUND_SPAN, start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+            mInputText.setSelection(start, end);
         }
 
         @Override
         public void onSequenceCompleted() {
             mInputText.setSelection(0, 0);
 
-            final Spannable text = mInputText.getText();
-            text.removeSpan(FOREGROUND_SPAN);
-            text.removeSpan(BACKGROUND_SPAN);
-
             mSpeakControls.setVisibility(View.GONE);
             mDefaultControls.setVisibility(View.VISIBLE);
             manageAudioFocus(false);
         }
     };
-    
+
     private final TextWatcher mTextWatcher = new TextWatcher() {
         @Override
         public void onTextChanged(CharSequence s, int start, int before, int count) {
             // Do nothing.
         }
-        
+
         @Override
         public void beforeTextChanged(CharSequence s, int start, int count, int after) {
             // Do nothing.
         }
-        
+
         @Override
         public void afterTextChanged(Editable s) {
             if (mTtsWrapper.isSpeaking()) {

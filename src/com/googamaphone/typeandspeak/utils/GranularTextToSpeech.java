@@ -21,7 +21,7 @@ public class GranularTextToSpeech {
     private static final int RESUME_SPEAKING = 2;
 
     private final CharSequenceIterator mCharSequenceIterator = new CharSequenceIterator(null);
-    private final TextToSpeech mTts;
+    private final TextToSpeechStub mTts;
     private final HashMap<String, String> mParams;
 
     private BreakIterator mBreakIterator;
@@ -40,6 +40,10 @@ public class GranularTextToSpeech {
     private boolean mBypassAdvance = false;
 
     public GranularTextToSpeech(Context context, TextToSpeech tts, Locale defaultLocale) {
+        this(context, new TextToSpeechWrapper(tts), defaultLocale);
+    }
+
+    public GranularTextToSpeech(Context context, TextToSpeechStub tts, Locale defaultLocale) {
         mTts = tts;
 
         mParams = new HashMap<String, String>();
@@ -56,10 +60,6 @@ public class GranularTextToSpeech {
         mListener = listener;
     }
 
-    public TextToSpeech getTextToSpeech() {
-        return mTts;
-    }
-
     public void setLocale(Locale locale) {
         mBreakIterator = BreakIterator.getSentenceInstance(locale);
 
@@ -67,7 +67,6 @@ public class GranularTextToSpeech {
         setText(mCurrentSequence);
     }
 
-    @SuppressWarnings("deprecation")
     public void speak() {
         pause();
 
@@ -134,7 +133,6 @@ public class GranularTextToSpeech {
         }
     }
 
-    @SuppressWarnings("deprecation")
     public void stop() {
         mIsPaused = true;
 
@@ -159,12 +157,6 @@ public class GranularTextToSpeech {
      *         already at the last unit.
      */
     private boolean nextInternal() {
-        if (mUnitEnd >= mCurrentSequence.length()) {
-            // This happens if the current sequence changes without resetting
-            // the iterator.
-            return false;
-        }
-
         do {
             final int result = safeFollowing(mBreakIterator, mUnitEnd);
 
@@ -191,12 +183,6 @@ public class GranularTextToSpeech {
      *         it already at the first unit.
      */
     private boolean previousInternal() {
-        if (mUnitStart <= 0) {
-            // This happens if the current sequence changes without resetting
-            // the iterator.
-            return false;
-        }
-
         do {
             final int result = safePreceding(mBreakIterator, mUnitStart);
 
@@ -249,6 +235,8 @@ public class GranularTextToSpeech {
         try {
             return iterator.following(offset);
         } catch (IllegalArgumentException e) {
+            e.printStackTrace();
+
             return BreakIterator.DONE;
         }
     }
@@ -257,6 +245,8 @@ public class GranularTextToSpeech {
         try {
             return iterator.preceding(offset);
         } catch (IllegalArgumentException e) {
+            e.printStackTrace();
+
             return BreakIterator.DONE;
         }
     }
@@ -287,6 +277,39 @@ public class GranularTextToSpeech {
             }
         }
     };
+
+    public interface TextToSpeechStub {
+        public void setOnUtteranceCompletedListener(
+                OnUtteranceCompletedListener mOnUtteranceCompletedListener);
+
+        public int speak(String string, int queueFlush, HashMap<String, String> mParams);
+
+        public void stop();
+    }
+
+    private static class TextToSpeechWrapper implements TextToSpeechStub {
+        private final TextToSpeech mTts;
+
+        public TextToSpeechWrapper(TextToSpeech tts) {
+            mTts = tts;
+        }
+
+        @SuppressWarnings("deprecation")
+        @Override
+        public void setOnUtteranceCompletedListener(OnUtteranceCompletedListener listener) {
+            mTts.setOnUtteranceCompletedListener(listener);
+        }
+
+        @Override
+        public int speak(String text, int queueMode, HashMap<String, String> params) {
+            return mTts.speak(text, queueMode, params);
+        }
+
+        @Override
+        public void stop() {
+            mTts.stop();
+        }
+    }
 
     public interface SingAlongListener {
         public void onSequenceStarted();
