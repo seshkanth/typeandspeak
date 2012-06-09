@@ -69,18 +69,15 @@ public class GranularTextToSpeech {
 
     @SuppressWarnings("deprecation")
     public void speak() {
-        mIsPaused = true;
+        pause();
 
-        mTts.stop();
         mTts.setOnUtteranceCompletedListener(mOnUtteranceCompletedListener);
 
         if (mListener != null) {
             mListener.onSequenceStarted();
         }
 
-        mIsPaused = false;
-
-        onUtteranceCompleted(null);
+        resume();
     }
 
     public void setText(CharSequence text) {
@@ -96,7 +93,7 @@ public class GranularTextToSpeech {
 
     public void resume() {
         mIsPaused = false;
-        speakCurrentUnit();
+        onUtteranceCompleted(null);
     }
 
     public void next() {
@@ -116,15 +113,17 @@ public class GranularTextToSpeech {
     }
 
     public void setSegmentFromCursor(int cursor) {
-        cursor = Math.min(Math.max(0, cursor), mCurrentSequence.length());
+        if ((cursor >= mCurrentSequence.length()) || (cursor < 0)) {
+            cursor = 0;
+        }
 
         if (mBreakIterator.isBoundary(cursor)) {
             mUnitStart = mBreakIterator.current();
-            mBreakIterator.following(cursor);
+            safeFollowing(mBreakIterator, cursor);
             mUnitEnd = mBreakIterator.current();
         } else {
             mUnitEnd = mBreakIterator.current();
-            mBreakIterator.preceding(cursor);
+            safePreceding(mBreakIterator, cursor);
             mUnitStart = mBreakIterator.current();
         }
 
@@ -160,14 +159,14 @@ public class GranularTextToSpeech {
      *         already at the last unit.
      */
     private boolean nextInternal() {
-        if (mUnitStart >= mCurrentSequence.length()) {
+        if (mUnitEnd >= mCurrentSequence.length()) {
             // This happens if the current sequence changes without resetting
             // the iterator.
             return false;
         }
 
         do {
-            final int result = mBreakIterator.following(mUnitEnd);
+            final int result = safeFollowing(mBreakIterator, mUnitEnd);
 
             if (result == BreakIterator.DONE) {
                 return false;
@@ -192,14 +191,14 @@ public class GranularTextToSpeech {
      *         it already at the first unit.
      */
     private boolean previousInternal() {
-        if (mUnitEnd > mCurrentSequence.length()) {
+        if (mUnitStart <= 0) {
             // This happens if the current sequence changes without resetting
             // the iterator.
             return false;
         }
 
         do {
-            final int result = mBreakIterator.preceding(mUnitStart);
+            final int result = safePreceding(mBreakIterator, mUnitStart);
 
             if (result == BreakIterator.DONE) {
                 return false;
@@ -244,6 +243,22 @@ public class GranularTextToSpeech {
     private void speakCurrentUnit() {
         final CharSequence text = mCurrentSequence.subSequence(mUnitStart, mUnitEnd);
         mTts.speak(text.toString(), TextToSpeech.QUEUE_FLUSH, mParams);
+    }
+
+    private static int safeFollowing(BreakIterator iterator, int offset) {
+        try {
+            return iterator.following(offset);
+        } catch (IllegalArgumentException e) {
+            return BreakIterator.DONE;
+        }
+    }
+
+    private static int safePreceding(BreakIterator iterator, int offset) {
+        try {
+            return iterator.preceding(offset);
+        } catch (IllegalArgumentException e) {
+            return BreakIterator.DONE;
+        }
     }
 
     private final SingAlongHandler mHandler = new SingAlongHandler(this);
