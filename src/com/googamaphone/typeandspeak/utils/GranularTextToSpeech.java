@@ -235,8 +235,6 @@ public class GranularTextToSpeech {
         try {
             return iterator.following(offset);
         } catch (IllegalArgumentException e) {
-            e.printStackTrace();
-
             return BreakIterator.DONE;
         }
     }
@@ -245,8 +243,6 @@ public class GranularTextToSpeech {
         try {
             return iterator.preceding(offset);
         } catch (IllegalArgumentException e) {
-            e.printStackTrace();
-
             return BreakIterator.DONE;
         }
     }

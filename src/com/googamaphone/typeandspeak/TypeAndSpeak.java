@@ -280,7 +280,7 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
             switch (id) {
                 case PINNED_CONFIRM_CLEAR: {
                     final PinnedDialog dialog = new PinnedDialog(TypeAndSpeak.this)
-                    .setContentView(R.layout.pinned_confirm_clear);
+                            .setContentView(R.layout.pinned_confirm_clear);
 
                     final View.OnClickListener clickListener = new View.OnClickListener() {
                         @Override
@@ -301,11 +301,11 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
                 }
                 case PINNED_NO_TEXT: {
                     return new PinnedDialog(TypeAndSpeak.this)
-                    .setContentView(R.layout.pinned_no_text);
+                            .setContentView(R.layout.pinned_no_text);
                 }
                 case PINNED_LANGUAGES: {
                     final PinnedDialog dialog = new PinnedDialog(TypeAndSpeak.this)
-                    .setContentView(R.layout.pinned_languages);
+                            .setContentView(R.layout.pinned_languages);
 
                     final ListView listView = (ListView) dialog.findViewById(R.id.languages);
                     listView.setAdapter(mLanguagesAdapter);
@@ -324,18 +324,18 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
                 }
                 case PINNED_PROPERTIES: {
                     final PinnedDialog dialog = new PinnedDialog(TypeAndSpeak.this)
-                    .setContentView(R.layout.pinned_properties);
+                            .setContentView(R.layout.pinned_properties);
 
                     ((SeekBar) dialog.findViewById(R.id.seekPitch))
-                    .setOnSeekBarChangeListener(mSeekListener);
+                            .setOnSeekBarChangeListener(mSeekListener);
                     ((SeekBar) dialog.findViewById(R.id.seekSpeed))
-                    .setOnSeekBarChangeListener(mSeekListener);
+                            .setOnSeekBarChangeListener(mSeekListener);
 
                     return dialog;
                 }
                 case PINNED_SAVE: {
                     final PinnedDialog dialog = new PinnedDialog(TypeAndSpeak.this)
-                    .setContentView(R.layout.pinned_save);
+                            .setContentView(R.layout.pinned_save);
                     final EditText editText = (EditText) dialog.findViewById(R.id.input);
                     final View confirmSave = dialog.findViewById(R.id.confirm_save);
 
@@ -461,7 +461,7 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
 
     /**
      * Restores a previously saved state.
-     * 
+     *
      * @param savedInstanceState The previously saved state.
      * @boolean fromIntent Whether the state is coming from an intent.
      */
@@ -526,7 +526,7 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
 
     /**
      * Shows the media playback dialog for the given values.
-     * 
+     *
      * @param contentValues The content values for the media.
      * @param contentUri The URI for the media.
      */
@@ -612,7 +612,7 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
     /**
      * Populates the language adapter with the specified locales. Attempts to
      * set the current selection based on {@link #mLocale}.
-     * 
+     *
      * @param locales The locales to populate.
      */
     private void populateAdapter(Set<Locale> locales) {
@@ -639,7 +639,7 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
 
     /**
      * Handles the text-to-speech language check callback.
-     * 
+     *
      * @param resultCode The result code.
      * @param data The returned data.
      */
@@ -674,7 +674,7 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
 
     /**
      * Handles the text-to-speech initialization callback.
-     * 
+     *
      * @param status The initialization status.
      */
     private void onTtsInitialized(int status) {

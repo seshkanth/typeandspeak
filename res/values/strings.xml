@@ -2,7 +2,7 @@
 <resources>
 
     <string name="app_name">Type and Speak</string>
-    <string name="add_more">Add more languages…</string>
+    <string name="add_more">Add more accents…</string>
     <string name="pitch">Pitch</string>
     <string name="speed">Speed</string>
     <string name="share_to">Share to…</string>
@@ -32,7 +32,7 @@
     <string name="set_ringtone">Set ringtone</string>
 
     <!-- Main menu -->
-    <string name="menu_language">Language</string>
+    <string name="menu_language">Accent</string>
     <string name="menu_clear">Clear</string>
     <string name="menu_save">Save</string>
     <string name="menu_library">Library</string>

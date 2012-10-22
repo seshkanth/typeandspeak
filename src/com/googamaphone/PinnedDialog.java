@@ -40,7 +40,7 @@ public class PinnedDialog {
 
     /**
      * Creates a new simple overlay.
-     * 
+     *
      * @param context The parent context.
      */
     public PinnedDialog(Context context) {
@@ -58,7 +58,7 @@ public class PinnedDialog {
 
         mTickAbove = (ImageView) mWindowView.findViewById(R.id.tick_above);
         mTickAbove.setVisibility(View.GONE);
-        
+
         mTickAbovePadding = mWindowView.findViewById(R.id.tick_above_padding);
         mTickBelowPadding = mWindowView.findViewById(R.id.tick_below_padding);
 
@@ -82,7 +82,7 @@ public class PinnedDialog {
 
     /**
      * Finds and returns the view within the overlay content.
-     * 
+     *
      * @param id The ID of the view to return.
      * @return The view with the specified ID, or {@code null} if not found.
      */
@@ -99,11 +99,12 @@ public class PinnedDialog {
      * {@link SimpleOverlayListener#onHide(SimpleOverlay)} if available.
      */
     public final void show(View pinnedView) {
-        synchronized (this) {
+        synchronized (mWindowView) {
             if (mVisible) {
+                // This dialog is already showing.
                 return;
             }
-    
+
             mPinnedView = pinnedView;
             mWindowView.getViewTreeObserver().addOnGlobalLayoutListener(mOnGlobalLayoutListener);
             mWindowManager.addView(mWindowView, mParams);
@@ -119,12 +120,14 @@ public class PinnedDialog {
      * Hides the overlay. Calls the listener's
      * {@link SimpleOverlayListener#onHide(SimpleOverlay)} if available.
      */
+    @SuppressWarnings("deprecation")
     public final void dismiss() {
-        synchronized (this) {
+        synchronized (mWindowView) {
             if (!mVisible) {
+                // This dialog is not visible.
                 return;
             }
-    
+
             mPinnedView = null;
             mWindowView.getViewTreeObserver().removeGlobalOnLayoutListener(mOnGlobalLayoutListener);
             mWindowManager.removeViewImmediate(mWindowView);
@@ -143,16 +146,19 @@ public class PinnedDialog {
 
     /**
      * Sets the current layout parameters and applies them immediately.
-     * 
+     *
      * @param params The layout parameters to use.
      */
     public void setParams(LayoutParams params) {
         mParams.copyFrom(params);
 
-        synchronized (this) {
-            if (mVisible) {
-                mWindowManager.updateViewLayout(mWindowView, mParams);
+        synchronized (mWindowView) {
+            if (!mVisible) {
+                // This dialog is not showing.
+                return;
             }
+
+            mWindowManager.updateViewLayout(mWindowView, mParams);
         }
     }
 
@@ -165,7 +171,7 @@ public class PinnedDialog {
 
     /**
      * Inflates the specified resource ID and sets it as the content view.
-     * 
+     *
      * @param layoutResId The layout ID of the view to set as the content view.
      */
     public PinnedDialog setContentView(int layoutResId) {
@@ -177,12 +183,7 @@ public class PinnedDialog {
     public static final int ABOVE = 0x1;
     public static final int BELOW = 0x2;
 
-    private void updatePinningOffset() {
-        if (mWindowView.getWindowVisibility() != View.VISIBLE) {
-            dismiss();
-            return;
-        }
-
+    private void updatePinningOffsetLocked() {
         final int width = mWindowView.getWidth();
         final int height = mWindowView.getHeight();
         final LayoutParams params = getParams();
@@ -247,7 +248,14 @@ public class PinnedDialog {
     private final OnGlobalLayoutListener mOnGlobalLayoutListener = new OnGlobalLayoutListener() {
         @Override
         public void onGlobalLayout() {
-            updatePinningOffset();
+            synchronized (mWindowView) {
+                if (!mVisible) {
+                    // This dialog is not showing.
+                    return;
+                }
+
+                updatePinningOffsetLocked();
+            }
         }
     };
 
