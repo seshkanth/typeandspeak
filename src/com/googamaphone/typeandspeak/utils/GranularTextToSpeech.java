@@ -81,6 +81,8 @@ public class GranularTextToSpeech {
 
     public void setText(CharSequence text) {
         mCurrentSequence = text;
+        mUnitStart = 0;
+        mUnitEnd = 0;
         mCharSequenceIterator.setCharSequence(mCurrentSequence);
         mBreakIterator.setText(mCharSequenceIterator);
     }
@@ -227,8 +229,22 @@ public class GranularTextToSpeech {
     }
 
     private void speakCurrentUnit() {
+        sanityCheck();
+
         final CharSequence text = mCurrentSequence.subSequence(mUnitStart, mUnitEnd);
         mTts.speak(text.toString(), TextToSpeech.QUEUE_FLUSH, mParams);
+    }
+
+    private void sanityCheck() {
+        final int length = mCurrentSequence.length();
+
+        if ((mUnitStart < 0) || (mUnitStart >= mCurrentSequence.length())) {
+            throw new IndexOutOfBoundsException("Unit start (" + mUnitStart
+                    + ") is invalid for string with length " + length);
+        } else if ((mUnitEnd < 0) || (mUnitEnd > mCurrentSequence.length())) {
+            throw new IndexOutOfBoundsException("Unit end (" + mUnitEnd
+                    + ") is invalid for string with length" + length);
+        }
     }
 
     private static boolean safeIsBoundary(BreakIterator iterator, int offset) {
