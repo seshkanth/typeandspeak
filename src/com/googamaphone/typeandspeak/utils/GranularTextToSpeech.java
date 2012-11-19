@@ -116,7 +116,7 @@ public class GranularTextToSpeech {
             cursor = 0;
         }
 
-        if (mBreakIterator.isBoundary(cursor)) {
+        if (safeIsBoundary(mBreakIterator, cursor)) {
             mUnitStart = mBreakIterator.current();
             safeFollowing(mBreakIterator, cursor);
             mUnitEnd = mBreakIterator.current();
@@ -229,6 +229,14 @@ public class GranularTextToSpeech {
     private void speakCurrentUnit() {
         final CharSequence text = mCurrentSequence.subSequence(mUnitStart, mUnitEnd);
         mTts.speak(text.toString(), TextToSpeech.QUEUE_FLUSH, mParams);
+    }
+
+    private static boolean safeIsBoundary(BreakIterator iterator, int offset) {
+        try {
+            return iterator.isBoundary(offset);
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
     }
 
     private static int safeFollowing(BreakIterator iterator, int offset) {
