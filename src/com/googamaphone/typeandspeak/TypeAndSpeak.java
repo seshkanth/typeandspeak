@@ -3,6 +3,7 @@ package com.googamaphone.typeandspeak;
 
 import java.io.IOException;
 import java.net.URL;
+import java.text.BreakIterator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -39,9 +40,13 @@ import android.view.ViewGroup;
 import android.view.WindowManager.LayoutParams;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
+import android.widget.CompoundButton.OnCheckedChangeListener;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.SeekBar;
+import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.Toast;
 
 import com.googamaphone.GoogamaphoneActivity;
@@ -49,6 +54,7 @@ import com.googamaphone.PinnedDialog;
 import com.googamaphone.PinnedDialogManager;
 import com.googamaphone.compat.AudioManagerCompatUtils;
 import com.googamaphone.typeandspeak.FileSynthesizer.FileSynthesizerListener;
+import com.googamaphone.typeandspeak.utils.CharSequenceIterator;
 import com.googamaphone.typeandspeak.utils.GranularTextToSpeech;
 import com.googamaphone.typeandspeak.utils.GranularTextToSpeech.SingAlongListener;
 import com.googamaphone.typeandspeak.utils.ReferencedHandler;
@@ -66,6 +72,7 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
     private static final String PREF_LOCALE = "PREF_LOCALE";
     private static final String PREF_PITCH = "PREF_PITCH";
     private static final String PREF_SPEED = "PREF_SPEED";
+    private static final String PREF_SPEAK_WHILE_TYPING = "PREF_SPEAK_WHILE_TYPING";
 
     // Dialog identifiers.
     private static final int DIALOG_INSTALL_DATA = 1;
@@ -119,6 +126,7 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
     private int mLocalePosition;
     private int mPitch;
     private int mSpeed;
+    private boolean mSpeakWhileTyping;
 
     // Extraction task.
     private ExtractionTask mExtractionTask;
@@ -179,6 +187,7 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
         mLocale = new Locale(prefs.getString(PREF_LOCALE, defaultLocale));
         mPitch = prefs.getInt(PREF_PITCH, 50);
         mSpeed = prefs.getInt(PREF_SPEED, 50);
+        mSpeakWhileTyping = prefs.getBoolean(PREF_SPEAK_WHILE_TYPING, false);
 
         // Never load the ADD_MORE locale as the default!
         if (LanguageAdapter.LOCALE_ADD_MORE.equals(mLocale)) {
@@ -195,6 +204,7 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
         final Editor editor = prefs.edit();
         editor.putInt(PREF_PITCH, mPitch);
         editor.putInt(PREF_SPEED, mSpeed);
+        editor.putBoolean(PREF_SPEAK_WHILE_TYPING, mSpeakWhileTyping);
         editor.putString(PREF_LOCALE, mLocale.toString());
         editor.putString(PREF_TEXT, mInputText.getText().toString());
         editor.commit();
@@ -330,6 +340,8 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
                             .setOnSeekBarChangeListener(mSeekListener);
                     ((SeekBar) dialog.findViewById(R.id.seekSpeed))
                             .setOnSeekBarChangeListener(mSeekListener);
+                    ((CheckBox) dialog.findViewById(R.id.speak_while_typing))
+                            .setOnCheckedChangeListener(mCheckBoxListener);
 
                     return dialog;
                 }
@@ -393,6 +405,7 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
                 case PINNED_PROPERTIES: {
                     ((SeekBar) dialog.findViewById(R.id.seekPitch)).setProgress(mPitch);
                     ((SeekBar) dialog.findViewById(R.id.seekSpeed)).setProgress(mSpeed);
+                    ((CheckBox) dialog.findViewById(R.id.speak_while_typing)).setChecked(mSpeakWhileTyping);
                     break;
                 }
             }
@@ -697,10 +710,21 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
         mSaveButton.setEnabled(true);
     }
 
+    private final OnCheckedChangeListener mCheckBoxListener = new OnCheckedChangeListener() {
+        @Override
+        public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+            switch (buttonView.getId()) {
+                case R.id.speak_while_typing:
+                    mSpeakWhileTyping = buttonView.isChecked();
+                    break;
+            }
+        }
+    };
+
     /**
      * Listens for seek bar changes and updates the pitch and speech rate.
      */
-    private final SeekBar.OnSeekBarChangeListener mSeekListener = new SeekBar.OnSeekBarChangeListener() {
+    private final OnSeekBarChangeListener mSeekListener = new OnSeekBarChangeListener() {
         @Override
         public void onStopTrackingTouch(SeekBar v) {
             // Do nothing.
@@ -811,9 +835,34 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
     };
 
     private final TextWatcher mTextWatcher = new TextWatcher() {
+        private final BreakIterator mWordIterator = BreakIterator.getWordInstance();
+        private final CharSequenceIterator mCharSequence = new CharSequenceIterator("");
+
         @Override
         public void onTextChanged(CharSequence s, int start, int before, int count) {
-            // Do nothing.
+            android.util.Log.e(TAG, "\"" + s + "\" start " + start + " before " + before + " count " + count);
+
+            if (!mSpeakWhileTyping || (before > 0) || (count != 1)) {
+                return;
+            }
+
+            mCharSequence.setCharSequence(s);
+            mWordIterator.setText(mCharSequence);
+
+            if (mWordIterator.isBoundary(start)) {
+                final int unitEnd = start;
+                final int unitStart = mWordIterator.preceding(unitEnd);
+                if (unitStart == BreakIterator.DONE) {
+                    return;
+                }
+
+                final CharSequence unit = TextUtils.substring(s, unitStart, unitEnd);
+                if (TextUtils.getTrimmedLength(unit) == 0)  {
+                    return;
+                }
+
+                mTts.speak(unit.toString(), TextToSpeech.QUEUE_FLUSH, null);
+            }
         }
 
         @Override

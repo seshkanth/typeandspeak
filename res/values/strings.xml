@@ -3,8 +3,11 @@
 
     <string name="app_name">Type and Speak</string>
     <string name="add_more">Add more accents…</string>
+
+    <!-- Properties dialog -->
     <string name="pitch">Pitch</string>
     <string name="speed">Speed</string>
+    <string name="speak_while_typing">Speak while typing</string>
     <string name="share_to">Share to…</string>
     <string name="menu_properties">Properties</string>
     <string name="failed_init">Failed to initialize speech synthesizer</string>
