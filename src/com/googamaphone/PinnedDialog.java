@@ -254,6 +254,12 @@ public class PinnedDialog {
                     return;
                 }
 
+                if (mWindowView.getWindowToken() == null) {
+                    mVisible = false;
+                    // This dialog was removed by the system.
+                    return;
+                }
+
                 updatePinningOffsetLocked();
             }
         }

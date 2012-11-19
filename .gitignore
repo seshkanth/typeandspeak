@@ -3,3 +3,4 @@
 /proguard
 .*
 /private
+/local.properties
