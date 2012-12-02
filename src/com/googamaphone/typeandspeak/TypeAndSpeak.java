@@ -670,7 +670,7 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
         mSaveButton.setEnabled(true);
 
         final boolean passed = (resultCode == TextToSpeech.Engine.CHECK_VOICE_DATA_PASS);
-        final Set<Locale> locales = TextToSpeechUtils.loadTtsLanguages(data);
+        final Set<Locale> locales = TextToSpeechUtils.loadTtsLanguages(mTts, data);
 
         if (!locales.isEmpty() || passed) {
             mSpeakButton.setEnabled(true);
