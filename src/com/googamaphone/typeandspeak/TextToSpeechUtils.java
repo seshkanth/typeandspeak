@@ -65,11 +65,15 @@ public class TextToSpeechUtils {
         for (int i = 0; i < files.length; i++) {
             final File file = new File(root, files[i]);
             if (!file.canRead()) {
+                LogUtils.log(TextToSpeechUtils.class, Log.ERROR,
+                        "Cannot read file for " + langs[i]);
                 continue;
             }
 
             final Locale locale = parseLocale(langs[i]);
             if (locale == null) {
+                LogUtils.log(TextToSpeechUtils.class, Log.ERROR,
+                        "Failed to parse locale for " + langs[i]);
                 continue;
             }
 
@@ -92,15 +96,6 @@ public class TextToSpeechUtils {
             }
 
             langsList.add(systemLocale);
-        }
-
-        // If no languages are supported, fall back to the current language.
-        if (langsList.isEmpty()) {
-            final Locale currentLang = tts.getLanguage();
-
-            if (currentLang != null) {
-                langsList.add(currentLang);
-            }
         }
 
         return (!langsList.isEmpty());

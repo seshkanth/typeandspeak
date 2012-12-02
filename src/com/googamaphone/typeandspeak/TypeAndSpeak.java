@@ -73,6 +73,7 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
     private static final String PREF_PITCH = "PREF_PITCH";
     private static final String PREF_SPEED = "PREF_SPEED";
     private static final String PREF_SPEAK_WHILE_TYPING = "PREF_SPEAK_WHILE_TYPING";
+    private static final String PREF_USE_LARGER_FONT = "PREF_USE_LARGER_FONT";
 
     // Dialog identifiers.
     private static final int DIALOG_INSTALL_DATA = 1;
@@ -89,6 +90,9 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
     // Activity request identifiers.
     private static final int REQUEST_CHECK_DATA = 1;
     private static final int REQUEST_INSTALL_DATA = 2;
+
+    private static final float DEFAULT_FONT = 16;
+    private static final float LARGER_FONT = 36;
 
     /** Speech parameters. */
     private final HashMap<String, String> mParams = new HashMap<String, String>();
@@ -127,6 +131,7 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
     private int mPitch;
     private int mSpeed;
     private boolean mSpeakWhileTyping;
+    private boolean mUseLargerFont;
 
     // Extraction task.
     private ExtractionTask mExtractionTask;
@@ -188,11 +193,14 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
         mPitch = prefs.getInt(PREF_PITCH, 50);
         mSpeed = prefs.getInt(PREF_SPEED, 50);
         mSpeakWhileTyping = prefs.getBoolean(PREF_SPEAK_WHILE_TYPING, false);
+        mUseLargerFont = prefs.getBoolean(PREF_USE_LARGER_FONT, false);
 
         // Never load the ADD_MORE locale as the default!
         if (LanguageAdapter.LOCALE_ADD_MORE.equals(mLocale)) {
             mLocale = Locale.getDefault();
         }
+
+        mInputText.setTextSize(mUseLargerFont ? LARGER_FONT : DEFAULT_FONT);
     }
 
     @Override
@@ -205,6 +213,7 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
         editor.putInt(PREF_PITCH, mPitch);
         editor.putInt(PREF_SPEED, mSpeed);
         editor.putBoolean(PREF_SPEAK_WHILE_TYPING, mSpeakWhileTyping);
+        editor.putBoolean(PREF_USE_LARGER_FONT, mUseLargerFont);
         editor.putString(PREF_LOCALE, mLocale.toString());
         editor.putString(PREF_TEXT, mInputText.getText().toString());
         editor.commit();
@@ -342,6 +351,8 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
                             .setOnSeekBarChangeListener(mSeekListener);
                     ((CheckBox) dialog.findViewById(R.id.speak_while_typing))
                             .setOnCheckedChangeListener(mCheckBoxListener);
+                    ((CheckBox) dialog.findViewById(R.id.use_larger_font))
+                            .setOnCheckedChangeListener(mCheckBoxListener);
 
                     return dialog;
                 }
@@ -406,6 +417,7 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
                     ((SeekBar) dialog.findViewById(R.id.seekPitch)).setProgress(mPitch);
                     ((SeekBar) dialog.findViewById(R.id.seekSpeed)).setProgress(mSpeed);
                     ((CheckBox) dialog.findViewById(R.id.speak_while_typing)).setChecked(mSpeakWhileTyping);
+                    ((CheckBox) dialog.findViewById(R.id.use_larger_font)).setChecked(mUseLargerFont);
                     break;
                 }
             }
@@ -717,6 +729,10 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
                 case R.id.speak_while_typing:
                     mSpeakWhileTyping = buttonView.isChecked();
                     break;
+                case R.id.use_larger_font:
+                    mUseLargerFont = buttonView.isChecked();
+                    mInputText.setTextSize(mUseLargerFont ? LARGER_FONT : DEFAULT_FONT);
+                    break;
             }
         }
     };
@@ -840,8 +856,6 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
 
         @Override
         public void onTextChanged(CharSequence s, int start, int before, int count) {
-            android.util.Log.e(TAG, "\"" + s + "\" start " + start + " before " + before + " count " + count);
-
             if (!mSpeakWhileTyping || (before > 0) || (count != 1)) {
                 return;
             }

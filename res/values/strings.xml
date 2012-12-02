@@ -8,6 +8,9 @@
     <string name="pitch">Pitch</string>
     <string name="speed">Speed</string>
     <string name="speak_while_typing">Speak while typing</string>
+    <string name="use_larger_font">Use larger font</string>
+
+    <!-- Other stuff? -->
     <string name="share_to">Share to…</string>
     <string name="menu_properties">Properties</string>
     <string name="failed_init">Failed to initialize speech synthesizer</string>
