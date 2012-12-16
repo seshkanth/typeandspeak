@@ -1,13 +1,17 @@
 
 package com.googamaphone.typeandspeak;
 
-import java.io.IOException;
-import java.net.URL;
-import java.text.BreakIterator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Set;
+import com.googamaphone.GoogamaphoneActivity;
+import com.googamaphone.PinnedDialog;
+import com.googamaphone.PinnedDialogManager;
+import com.googamaphone.compat.AudioManagerCompatUtils;
+import com.googamaphone.typeandspeak.FileSynthesizer.FileSynthesizerListener;
+import com.googamaphone.typeandspeak.utils.CharSequenceIterator;
+import com.googamaphone.typeandspeak.utils.GranularTextToSpeech;
+import com.googamaphone.typeandspeak.utils.GranularTextToSpeech.SingAlongListener;
+import com.googamaphone.typeandspeak.utils.ReferencedHandler;
+
+import de.l3s.boilerpipe.extractors.ArticleExtractor;
 
 import android.app.AlertDialog.Builder;
 import android.app.Dialog;
@@ -23,6 +27,7 @@ import android.content.SharedPreferences.Editor;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.media.AudioManager;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
@@ -39,6 +44,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager.LayoutParams;
 import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ArrayAdapter;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
@@ -49,17 +55,13 @@ import android.widget.SeekBar;
 import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.Toast;
 
-import com.googamaphone.GoogamaphoneActivity;
-import com.googamaphone.PinnedDialog;
-import com.googamaphone.PinnedDialogManager;
-import com.googamaphone.compat.AudioManagerCompatUtils;
-import com.googamaphone.typeandspeak.FileSynthesizer.FileSynthesizerListener;
-import com.googamaphone.typeandspeak.utils.CharSequenceIterator;
-import com.googamaphone.typeandspeak.utils.GranularTextToSpeech;
-import com.googamaphone.typeandspeak.utils.GranularTextToSpeech.SingAlongListener;
-import com.googamaphone.typeandspeak.utils.ReferencedHandler;
-
-import de.l3s.boilerpipe.extractors.ArticleExtractor;
+import java.io.IOException;
+import java.net.URL;
+import java.text.BreakIterator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 
 public class TypeAndSpeak extends GoogamaphoneActivity {
     private static final String TAG = TypeAndSpeak.class.getSimpleName();
@@ -327,8 +329,7 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
                             .setContentView(R.layout.pinned_languages);
 
                     final ListView listView = (ListView) dialog.findViewById(R.id.languages);
-                    listView.setAdapter(mLanguagesAdapter);
-                    listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                    final OnItemClickListener onItemClickListener = new OnItemClickListener() {
                         @Override
                         public void onItemClick(AdapterView<?> parent, View view, int position,
                                 long id) {
@@ -337,7 +338,21 @@ public class TypeAndSpeak extends GoogamaphoneActivity {
                             mLocalePosition = position;
                             dialog.dismiss();
                         }
-                    });
+                    };
+
+                    listView.setAdapter(mLanguagesAdapter);
+                    listView.setOnItemClickListener(onItemClickListener);
+
+                    final View.OnClickListener onCLickListener = new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            final Intent intent = new Intent(Intent.ACTION_VIEW);
+                            intent.setData(Uri.parse("market://search?q=tts&c=apps"));
+                            startActivity(intent);
+                        }
+                    };
+
+                    dialog.findViewById(R.id.more_languages).setOnClickListener(onCLickListener);
 
                     return dialog;
                 }
