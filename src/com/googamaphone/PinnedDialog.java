@@ -20,6 +20,9 @@ import android.widget.ImageView;
 import com.googamaphone.typeandspeak.R;
 
 public class PinnedDialog {
+    public static final int ABOVE = 0x1;
+    public static final int BELOW = 0x2;
+
     private final Rect mPinnedRect = new Rect();
     private final Rect mBoundsRect = new Rect();
     private final Rect mScreenRect = new Rect();
@@ -73,23 +76,6 @@ public class PinnedDialog {
         mVisible = false;
     }
 
-    /**
-     * @return The overlay context.
-     */
-    public Context getContext() {
-        return mContext;
-    }
-
-    /**
-     * Finds and returns the view within the overlay content.
-     *
-     * @param id The ID of the view to return.
-     * @return The view with the specified ID, or {@code null} if not found.
-     */
-    public View findViewById(int id) {
-        return mWindowView.findViewById(id);
-    }
-
     public final void cancel() {
         dismiss();
     }
@@ -112,10 +98,6 @@ public class PinnedDialog {
         }
     }
 
-    public View getPinnedView() {
-        return mPinnedView;
-    }
-
     /**
      * Hides the overlay. Calls the listener's
      * {@link SimpleOverlayListener#onHide(SimpleOverlay)} if available.
@@ -123,7 +105,7 @@ public class PinnedDialog {
     @SuppressWarnings("deprecation")
     public final void dismiss() {
         synchronized (mWindowView) {
-            if (!mVisible) {
+            if (!mVisible || !mWindowView.isShown()) {
                 // This dialog is not visible.
                 return;
             }
@@ -133,6 +115,23 @@ public class PinnedDialog {
             mWindowManager.removeViewImmediate(mWindowView);
             mVisible = false;
         }
+    }
+
+    /**
+     * @return The overlay context.
+     */
+    public Context getContext() {
+        return mContext;
+    }
+
+    /**
+     * Finds and returns the view within the overlay content.
+     *
+     * @param id The ID of the view to return.
+     * @return The view with the specified ID, or {@code null} if not found.
+     */
+    public View findViewById(int id) {
+        return mWindowView.findViewById(id);
     }
 
     /**
@@ -153,7 +152,7 @@ public class PinnedDialog {
         mParams.copyFrom(params);
 
         synchronized (mWindowView) {
-            if (!mVisible) {
+            if (!mVisible || !mWindowView.isShown()) {
                 // This dialog is not showing.
                 return;
             }
@@ -166,7 +165,7 @@ public class PinnedDialog {
      * @return {@code true} if this overlay is visible.
      */
     public boolean isVisible() {
-        return mVisible;
+        return (mVisible && mWindowView.isShown());
     }
 
     /**
@@ -180,8 +179,9 @@ public class PinnedDialog {
         return this;
     }
 
-    public static final int ABOVE = 0x1;
-    public static final int BELOW = 0x2;
+    public View getPinnedView() {
+        return mPinnedView;
+    }
 
     private void updatePinningOffsetLocked() {
         final int width = mWindowView.getWidth();
