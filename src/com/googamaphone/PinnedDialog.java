@@ -1,6 +1,8 @@
 
 package com.googamaphone;
 
+import com.googamaphone.typeandspeak.R;
+
 import android.content.Context;
 import android.graphics.PixelFormat;
 import android.graphics.Rect;
@@ -12,18 +14,18 @@ import android.view.View;
 import android.view.View.OnKeyListener;
 import android.view.View.OnTouchListener;
 import android.view.ViewGroup;
+import android.view.ViewTreeObserver;
 import android.view.ViewTreeObserver.OnGlobalLayoutListener;
 import android.view.WindowManager;
 import android.view.WindowManager.LayoutParams;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
-
-import com.googamaphone.typeandspeak.R;
 
 public class PinnedDialog {
     public static final int ABOVE = 0x1;
     public static final int BELOW = 0x2;
 
-    private final Rect mPinnedRect = new Rect();
+    private final Rect mAnchorRect = new Rect();
     private final Rect mBoundsRect = new Rect();
     private final Rect mScreenRect = new Rect();
 
@@ -37,7 +39,7 @@ public class PinnedDialog {
     private final View mTickBelowPadding;
     private final LayoutParams mParams;
 
-    private View mPinnedView;
+    private View mAnchorView;
 
     private boolean mVisible = false;
 
@@ -50,18 +52,15 @@ public class PinnedDialog {
         mContext = context;
         mWindowManager = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
 
-        mWindowView = (ViewGroup) LayoutInflater.from(context)
-                .inflate(R.layout.pinned_dialog, null);
+        mWindowView = new PinnedLayout(context);
         mWindowView.setOnTouchListener(mOnTouchListener);
         mWindowView.setOnKeyListener(mOnKeyListener);
 
+        LayoutInflater.from(context).inflate(R.layout.pinned_dialog, mWindowView);
+
         mContentView = (ViewGroup) mWindowView.findViewById(R.id.content);
-
         mTickBelow = (ImageView) mWindowView.findViewById(R.id.tick_below);
-
         mTickAbove = (ImageView) mWindowView.findViewById(R.id.tick_above);
-        mTickAbove.setVisibility(View.GONE);
-
         mTickAbovePadding = mWindowView.findViewById(R.id.tick_above_padding);
         mTickBelowPadding = mWindowView.findViewById(R.id.tick_below_padding);
 
@@ -85,17 +84,17 @@ public class PinnedDialog {
      * {@link SimpleOverlayListener#onHide(SimpleOverlay)} if available.
      */
     public final void show(View pinnedView) {
-        synchronized (mWindowView) {
-            if (mVisible) {
-                // This dialog is already showing.
-                return;
-            }
-
-            mPinnedView = pinnedView;
-            mWindowView.getViewTreeObserver().addOnGlobalLayoutListener(mOnGlobalLayoutListener);
-            mWindowManager.addView(mWindowView, mParams);
-            mVisible = true;
+        if (isVisible()) {
+            return;
         }
+
+        mAnchorView = pinnedView;
+
+        mWindowManager.addView(mWindowView, mParams);
+        mVisible = true;
+
+        final ViewTreeObserver observer = pinnedView.getViewTreeObserver();
+        observer.addOnGlobalLayoutListener(mOnGlobalLayoutListener);
     }
 
     /**
@@ -104,17 +103,15 @@ public class PinnedDialog {
      */
     @SuppressWarnings("deprecation")
     public final void dismiss() {
-        synchronized (mWindowView) {
-            if (!mVisible || !mWindowView.isShown()) {
-                // This dialog is not visible.
-                return;
-            }
-
-            mPinnedView = null;
-            mWindowView.getViewTreeObserver().removeGlobalOnLayoutListener(mOnGlobalLayoutListener);
-            mWindowManager.removeViewImmediate(mWindowView);
-            mVisible = false;
+        if (!isVisible()) {
+            return;
         }
+
+        mWindowManager.removeView(mWindowView);
+        mVisible = false;
+
+        final ViewTreeObserver observer = mAnchorView.getViewTreeObserver();
+        observer.removeGlobalOnLayoutListener(mOnGlobalLayoutListener);
     }
 
     /**
@@ -151,14 +148,11 @@ public class PinnedDialog {
     public void setParams(LayoutParams params) {
         mParams.copyFrom(params);
 
-        synchronized (mWindowView) {
-            if (!mVisible || !mWindowView.isShown()) {
-                // This dialog is not showing.
-                return;
-            }
-
-            mWindowManager.updateViewLayout(mWindowView, mParams);
+        if (!isVisible()) {
+            return;
         }
+
+        mWindowManager.updateViewLayout(mWindowView, mParams);
     }
 
     /**
@@ -180,28 +174,28 @@ public class PinnedDialog {
     }
 
     public View getPinnedView() {
-        return mPinnedView;
+        return mAnchorView;
     }
 
-    private void updatePinningOffsetLocked() {
+    private void updatePinningOffset() {
         final int width = mWindowView.getWidth();
         final int height = mWindowView.getHeight();
         final LayoutParams params = getParams();
-
-        final View rootView = mPinnedView.getRootView();
+        final View rootView = mAnchorView.getRootView();
         final View parentContent = rootView.findViewById(android.R.id.content);
+
         rootView.getGlobalVisibleRect(mScreenRect);
         parentContent.getGlobalVisibleRect(mBoundsRect);
-        mPinnedView.getGlobalVisibleRect(mPinnedRect);
+        mAnchorView.getGlobalVisibleRect(mAnchorRect);
 
-        if ((mPinnedRect.bottom + height) <= mBoundsRect.bottom) {
+        if ((mAnchorRect.bottom + height) <= mBoundsRect.bottom) {
             // Place below.
-            params.y = (mPinnedRect.bottom);
+            params.y = (mAnchorRect.bottom);
             mTickBelow.setVisibility(View.VISIBLE);
             mTickAbove.setVisibility(View.GONE);
-        } else if ((mPinnedRect.top - height) >= mScreenRect.top) {
+        } else if ((mAnchorRect.top - height) >= mScreenRect.top) {
             // Place above.
-            params.y = (mPinnedRect.top - height);
+            params.y = (mAnchorRect.top - height);
             mTickBelow.setVisibility(View.GONE);
             mTickAbove.setVisibility(View.VISIBLE);
         } else {
@@ -212,7 +206,7 @@ public class PinnedDialog {
         }
 
         // First, attempt to center on the pinned view.
-        params.x = (mPinnedRect.centerX() - (width / 2));
+        params.x = (mAnchorRect.centerX() - (width / 2));
 
         if (params.x < mBoundsRect.left) {
             // Align to left of parent.
@@ -222,23 +216,9 @@ public class PinnedDialog {
             params.x = (mBoundsRect.right - width);
         }
 
-        final int tickLeft = (mPinnedRect.centerX() - params.x) - (mTickAbove.getWidth() / 2);
+        final int tickLeft = (mAnchorRect.centerX() - params.x) - (mTickAbove.getWidth() / 2);
         mTickAbovePadding.getLayoutParams().width = tickLeft;
         mTickBelowPadding.getLayoutParams().width = tickLeft;
-
-        /*
-         * if (xAlign == LEFT_OF) { params.x = (mTempRect.left - width); } else
-         * if (xAlign == RIGHT_OF) { params.x = (mTempRect.right); } else if
-         * (xAlign == ALIGN_LEFT) { params.x = (mTempRect.left); } else if
-         * (xAlign == ALIGN_RIGHT) { params.x = (mTempRect.right - width); }
-         * else if (xAlign == CENTER_HORIZONTAL) { params.x =
-         * (mTempRect.centerX() - (width / 2)); } if (yAlign == ABOVE) {
-         * params.y = (mTempRect.top - height); } else if (yAlign == BELOW) {
-         * params.y = (mTempRect.bottom); } else if (yAlign == ALIGN_TOP) {
-         * params.y = (mTempRect.top); } else if (yAlign == ALIGN_BOTTOM) {
-         * params.y = (mTempRect.bottom - height); } else if (yAlign ==
-         * CENTER_VERTICAL) { params.y = (mTempRect.centerY() - (height / 2)); }
-         */
 
         params.gravity = Gravity.LEFT | Gravity.TOP;
 
@@ -248,20 +228,18 @@ public class PinnedDialog {
     private final OnGlobalLayoutListener mOnGlobalLayoutListener = new OnGlobalLayoutListener() {
         @Override
         public void onGlobalLayout() {
-            synchronized (mWindowView) {
-                if (!mVisible) {
-                    // This dialog is not showing.
-                    return;
-                }
-
-                if (mWindowView.getWindowToken() == null) {
-                    mVisible = false;
-                    // This dialog was removed by the system.
-                    return;
-                }
-
-                updatePinningOffsetLocked();
+            if (!isVisible()) {
+                // This dialog is not showing.
+                return;
             }
+
+            if (mWindowView.getWindowToken() == null) {
+                // This dialog was removed by the system.
+                mVisible = false;
+                return;
+            }
+
+            updatePinningOffset();
         }
     };
 
@@ -283,9 +261,9 @@ public class PinnedDialog {
         @Override
         public boolean onTouch(View v, MotionEvent event) {
             if (event.getAction() == MotionEvent.ACTION_UP) {
-                v.getHitRect(mPinnedRect);
+                v.getHitRect(mAnchorRect);
 
-                if (!mPinnedRect.contains((int) event.getX(), (int) event.getY())) {
+                if (!mAnchorRect.contains((int) event.getX(), (int) event.getY())) {
                     cancel();
                 }
             }
@@ -293,4 +271,17 @@ public class PinnedDialog {
             return false;
         }
     };
+
+    private class PinnedLayout extends FrameLayout {
+        public PinnedLayout(Context context) {
+            super(context);
+        }
+
+        @Override
+        protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
+            super.onLayout(changed, left, top, right, bottom);
+
+            updatePinningOffset();
+        }
+    }
 }
