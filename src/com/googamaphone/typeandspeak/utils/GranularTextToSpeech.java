@@ -154,7 +154,7 @@ public class GranularTextToSpeech {
     /**
      * Move the break iterator forward by one unit. If the cursor is in the
      * middle of a unit, it will move to the next unit.
-     * 
+     *
      * @return {@code true} if the iterator moved forward or {@code false} if it
      *         already at the last unit.
      */
@@ -180,7 +180,7 @@ public class GranularTextToSpeech {
     /**
      * Move the break iterator backward by one unit. If the cursor is in the
      * middle of a unit, it will move to the beginning of the unit.
-     * 
+     *
      * @return {@code true} if the iterator moved backward or {@code false} if
      *         it already at the first unit.
      */
@@ -229,6 +229,10 @@ public class GranularTextToSpeech {
     }
 
     private void speakCurrentUnit() {
+        if (mCurrentSequence.length() == 0) {
+            return;
+        }
+
         sanityCheck();
 
         final CharSequence text = mCurrentSequence.subSequence(mUnitStart, mUnitEnd);
